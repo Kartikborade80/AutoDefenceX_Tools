@@ -1,7 +1,14 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from ..database import get_db
+from ..auth import get_current_user
+from .. import models
 import subprocess
 import json
 import logging
+import threading
+
+import platform
 
 router = APIRouter(prefix="/defender", tags=["defender"])
 
@@ -21,19 +28,36 @@ def run_powershell(cmd):
         logging.error(f"Execution Error: {str(e)}")
         return None
 
-import threading
 
 # Global state for scanning
 scan_lock = threading.Lock()
 is_scanning = False
 
-import platform
 
 @router.get("/status")
-def get_defender_status():
+def get_defender_status(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
     global is_scanning
     
-    # Dynamic Status for Linux (Render)
+    # 1. Try to fetch from DB (Agent Report in ScanResult)
+    # Find latest scan result for this user's organization endpoints
+    endpoint = db.query(models.Endpoint).filter(
+        models.Endpoint.organization_id == current_user.organization_id
+    ).order_by(models.Endpoint.last_seen.desc()).first()
+    
+    if endpoint:
+        scan_result = db.query(models.ScanResult).filter(
+            models.ScanResult.endpoint_id == endpoint.id,
+            models.ScanResult.scan_type == "agent_report"
+        ).order_by(models.ScanResult.started_at.desc()).first()
+        
+        if scan_result and scan_result.system_health:
+             # Return the stored JSON exactly
+             return scan_result.system_health
+    
+    # Dynamic Status for Linux (Render) -> Fallback
     if platform.system() != "Windows":
         try:
             # Use subprocess to get Kernel version (mimicking "CMD command" request)

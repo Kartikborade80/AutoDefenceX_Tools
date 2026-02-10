@@ -1,10 +1,11 @@
-from fastapi import APIRouter
-import subprocess
-import json
-import logging
-
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from ..database import get_db
+from ..auth import get_current_user
+from .. import models
 import platform
 import psutil
+import json
 
 router = APIRouter(prefix="/system", tags=["system"])
 
@@ -26,8 +27,60 @@ def run_powershell(cmd):
         return None
 
 @router.get("/info")
-def get_system_info():
-    # Linux / Non-Windows Support (Render/Docker)
+def get_system_info(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    # 1. Try to fetch from DB (Agent Report)
+    # Get last updated endpoint for this user?
+    # or get the endpoint that matches the user's primary device.
+    # We will search for ANY online endpoint for this user's organization that matches their assigned hostname, 
+    # or just the most recently updated one.
+    
+    endpoint = db.query(models.Endpoint).filter(
+        models.Endpoint.organization_id == current_user.organization_id
+        # In a real scenario, we'd filter by current_user.device_id or similar
+    ).order_by(models.Endpoint.last_seen.desc()).first()
+    
+    if endpoint and endpoint.system_info:
+        try:
+            sys_info = endpoint.system_info
+            
+            # Parse OS details from endpoint.os_details (JSON string)
+            os_data = json.loads(endpoint.os_details) if endpoint.os_details else {}
+            if not os_data: 
+                # Fallback if empty
+                os_data = {
+                    "name": endpoint.os_details or "Windows (Agent)",
+                    "version": "Unknown",
+                    "arch": "Unknown" 
+                }
+            
+            # Retrieve CPU info stashed in running_processes
+            cpu_info = sys_info.running_processes.get("_cpu_info", {}) if sys_info.running_processes else {}
+            
+            # Construct Response
+            return {
+                "hostname": endpoint.hostname,
+                "os": os_data,
+                "cpu": {
+                    "name": cpu_info.get("name", "Unknown Processor"),
+                    "cores": cpu_info.get("cores", "Unknown"),
+                    "logical": cpu_info.get("logical", 0)
+                },
+                "ram": {
+                    "total_gb": sys_info.total_ram,
+                    "free_gb": round(sys_info.total_ram * (1 - (sys_info.ram_usage/100)), 2),
+                    "used_gb": round(sys_info.total_ram * (sys_info.ram_usage/100), 2),
+                    "percent_used": sys_info.ram_usage
+                }
+            }
+        except Exception as e:
+            logging.error(f"Error serving agent details: {e}")
+            # Fallthrough to local server info
+
+
+    # 2. Linux / Non-Windows Support (Render/Docker) server fallback
     if platform.system() != "Windows":
         try:
             mem = psutil.virtual_memory()

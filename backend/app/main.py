@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import os
 from dotenv import load_dotenv
-from .routers import users, endpoints, scans, auth, threat_intel, reports, departments, policies, forensics, sessions, chatbot, otp, organizations, attendance, tasks, messages, defender, system, search, analytics
+from .routers import users, endpoints, scans, auth, threat_intel, reports, departments, policies, forensics, sessions, chatbot, otp, organizations, attendance, tasks, messages, defender, system, search, analytics, agent
 from .websockets import manager
 from .auth import get_current_user_from_token
 from fastapi import WebSocket, WebSocketDisconnect, Query
@@ -44,6 +44,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+from fastapi import Request
+from fastapi.responses import JSONResponse
+import traceback
+
+@app.exception_handler(Exception)
+async def debug_exception_handler(request: Request, exc: Exception):
+    error_msg = "".join(traceback.format_exception(None, exc, exc.__traceback__))
+    print(f"CRITICAL ERROR: {error_msg}") # Log to console for Render
+    return JSONResponse(
+        status_code=500,
+        content={"message": "Internal Server Error", "detail": error_msg},
+    )
 
 # Activity Tracking Middleware
 from .middleware.activity import update_last_activity
@@ -107,6 +120,7 @@ app.include_router(forensics.router)
 app.include_router(sessions.router)
 app.include_router(otp.router)
 app.include_router(organizations.router)
+app.include_router(agent.router)
 
 @app.websocket("/ws/{token}")
 async def websocket_endpoint(websocket: WebSocket, token: str):
