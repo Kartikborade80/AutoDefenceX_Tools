@@ -8,9 +8,11 @@ const useWebSockets = (onMessage) => {
         if (!token) return;
 
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = window.location.host;
-        // Adjust host for development if needed, assuming backend is on same host or 8000
-        const wsHost = host.includes('5178') ? 'localhost:8000' : host;
+        let wsHost = window.location.host;
+        // Adjust host for development if needed
+        if (wsHost.includes('5178')) {
+            wsHost = 'localhost:8000';
+        }
 
         ws.current = new WebSocket(`${protocol}//${wsHost}/ws/${token}`);
 

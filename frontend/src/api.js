@@ -1,7 +1,17 @@
 import axios from 'axios';
 
-// Use environment variable for API URL with fallback to localhost
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// Helper to get API URL
+const getApiUrl = () => {
+    if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+    // If on localhost (dev), assume backend is on 8000
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return 'http://localhost:8000';
+    }
+    // In production (Render), backend is on same origin, so use relative path
+    return '';
+};
+
+const API_URL = getApiUrl();
 
 const api = axios.create({
     baseURL: API_URL,

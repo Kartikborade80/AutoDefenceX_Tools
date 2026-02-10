@@ -2,8 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Shield, Zap, AlertTriangle, CheckCircle, X, Cpu, HardDrive, Activity } from 'lucide-react';
 import './ScanningPopup.css';
 
-// Use environment variable for API URL
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// Helper to get API URL
+const getApiUrl = () => {
+    if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return 'http://localhost:8000';
+    }
+    return '';
+};
+
+const API_URL = getApiUrl();
 
 const ScanningPopup = ({ isOpen, onClose, scanId, token }) => {
     const [scanData, setScanData] = useState(null);
