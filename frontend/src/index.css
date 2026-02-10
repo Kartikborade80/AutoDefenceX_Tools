@@ -1,0 +1,125 @@
+:root {
+  /* Dark Mode (Default) - Premium Cyber Security Theme */
+  --bg-dark: #0f172a;
+  /* Deep Navy from screenshot */
+  --bg-main: #131b2e;
+  --bg-sidebar: #0f172a;
+  --bg-card: #1e293b;
+  --bg-acrylic: rgba(30, 41, 59, 0.8);
+
+  --border-glass: rgba(255, 255, 255, 0.1);
+  --border-color: rgba(51, 65, 85, 0.5);
+
+  --primary: #3b82f6;
+  /* Electric Blue/Azure */
+  --primary-glow: rgba(59, 130, 246, 0.5);
+  --accent-glow: #60a5fa;
+
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text: #e2e8f0;
+  --text-muted: #64748b;
+
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --info: #3b82f6;
+
+  --radius-lg: 12px;
+  --radius-md: 8px;
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+}
+
+/* Light Mode */
+:root[data-theme="light"] {
+  --bg-dark: #f1f5f9;
+  --bg-main: #ffffff;
+  --bg-sidebar: rgba(255, 255, 255, 0.95);
+  --bg-acrylic: rgba(248, 250, 252, 0.9);
+  --border-glass: rgba(0, 0, 0, 0.08);
+  --border-color: rgba(0, 0, 0, 0.12);
+
+  --primary: #0066cc;
+  --primary-glow: rgba(0, 102, 204, 0.3);
+  --accent-glow: #0066cc;
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text: #1e293b;
+  --text-muted: #94a3b8;
+
+  --success: #059669;
+  --danger: #dc2626;
+  --warning: #d97706;
+
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
+  /* Windows Native Font Stack */
+  -webkit-font-smoothing: antialiased;
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar (Windows 11 Style) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Light mode scrollbar */
+:root[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+:root[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+.slide-up {
+  animation: slideUp 0.4s ease-out;
+}

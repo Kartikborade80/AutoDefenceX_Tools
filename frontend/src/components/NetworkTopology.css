@@ -1,0 +1,264 @@
+.topology-container {
+    padding: 20px;
+    height: calc(100vh - 100px);
+    display: flex;
+    flex-direction: column;
+}
+
+.topology-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.title-group h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.5rem;
+}
+
+.topology-legend {
+    display: flex;
+    gap: 20px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: #94a3b8;
+}
+
+.dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.dot.online {
+    background: #10b981;
+}
+
+.dot.isolated {
+    background: #f59e0b;
+}
+
+.dot.warning {
+    background: #ef4444;
+}
+
+.topology-viz-layout {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 30px;
+    flex: 1;
+}
+
+.svg-container {
+    background: rgba(15, 23, 42, 0.4);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+    cursor: grab;
+}
+
+.topology-svg {
+    width: 100%;
+    height: 100%;
+}
+
+.topology-link {
+    stroke-width: 2;
+    stroke: rgba(255, 255, 255, 0.05);
+    stroke-dasharray: 4;
+}
+
+.topology-link.online {
+    stroke: rgba(16, 185, 129, 0.2);
+}
+
+.topology-link.isolated {
+    stroke: rgba(245, 158, 11, 0.2);
+}
+
+.topology-link.offline {
+    stroke: rgba(148, 163, 184, 0.1);
+}
+
+/* Node Styles */
+.node-group {
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.node-group:hover {
+    filter: brightness(1.3);
+}
+
+.node-bg {
+    fill: #1e293b;
+    stroke: rgba(255, 255, 255, 0.1);
+    stroke-width: 2;
+}
+
+.node-group.gateway .node-bg {
+    fill: #3b82f6;
+    stroke: rgba(255, 255, 255, 0.2);
+}
+
+.node-group.online .node-bg {
+    stroke: #10b981;
+}
+
+.node-group.isolated .node-bg {
+    stroke: #f59e0b;
+}
+
+.node-group.risk .node-bg {
+    stroke: #ef4444;
+}
+
+.node-group.selected .node-bg {
+    stroke: #3b82f6;
+    stroke-width: 4;
+    filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5));
+}
+
+.node-icon-wrapper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.node-label {
+    fill: #94a3b8;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.risk-indicator {
+    fill: #ef4444;
+}
+
+/* Sidebar Styles */
+.topology-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.card-glass {
+    background: rgba(30, 41, 59, 0.4);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 20px;
+}
+
+.card-glass h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1rem;
+    color: #cbd5e1;
+    margin-bottom: 20px;
+}
+
+.node-details {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+}
+
+.detail-row .label {
+    color: #64748b;
+}
+
+.detail-row .value {
+    color: #f1f5f9;
+    font-weight: 600;
+}
+
+.status-text.online {
+    color: #10b981;
+}
+
+.status-text.isolated {
+    color: #f59e0b;
+}
+
+.risk-badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+
+.risk-badge.critical {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.risk-badge.low {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+.no-selection {
+    color: #64748b;
+    text-align: center;
+    font-size: 0.85rem;
+    padding: 20px 0;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+/* Animations */
+.pulse-slow {
+    animation: pulse-ring 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.pulse-fast {
+    animation: pulse-ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-ring {
+    0% {
+        transform: scale(0.95);
+        opacity: 0.5;
+    }
+
+    50% {
+        transform: scale(1.05);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: scale(0.95);
+        opacity: 0.5;
+    }
+}
+
+@media (max-width: 1200px) {
+    .topology-viz-layout {
+        grid-template-columns: 1fr;
+    }
+}

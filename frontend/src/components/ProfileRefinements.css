@@ -1,0 +1,115 @@
+/* Profile & About Refinements */
+.profile-hero {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.avatar-circle-large {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 700;
+    color: white;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.profile-identity h3 {
+    font-size: 1.75rem;
+    margin-bottom: 8px;
+}
+
+.profile-details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.profile-detail-box {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.detail-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.detail-value {
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.profile-policy-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.policy-highlight-box {
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.policy-highlight-box.locked {
+    background: rgba(239, 68, 68, 0.05);
+    border-left: 4px solid #ef4444;
+}
+
+.policy-highlight-box.unlocked {
+    background: rgba(16, 185, 129, 0.05);
+    border-left: 4px solid #10b981;
+}
+
+.policy-label {
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.policy-note {
+    margin-top: 12px;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+/* Personal Security Center Refinements */
+.personal-grid-modern {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 24px;
+}
+
+.scan-card-modern {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(30, 41, 59, 0.8) 100%);
+}
+
+.text-alignment-fix {
+    text-align: left !important;
+}
+
+.highlight-system-box {
+    background: rgba(59, 130, 246, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    margin: 12px 0;
+}

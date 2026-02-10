@@ -1,0 +1,290 @@
+from fastapi import APIRouter, Depends, HTTPException, status, Form, Request, BackgroundTasks
+from typing import Optional
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.orm import Session
+from datetime import timedelta
+from .. import crud, models, schemas, database, auth
+
+router = APIRouter(prefix="/auth", tags=["auth"])
+
+@router.post("/token", response_model=schemas.TokenResponse)
+async def login_for_access_token(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    username: str = Form(...),
+    password: str = Form(...),
+    otp: Optional[str] = Form(None),
+    db: Session = Depends(database.get_db)
+):
+    from .otp import send_2factor_otp_request, verify_2factor_otp_request, verification_sessions, format_phone
+    from datetime import datetime, timedelta
+
+    # Capture IP and User-Agent
+    client_ip = request.client.host if request.client else "unknown"
+    user_agent = request.headers.get("user-agent", "unknown")
+
+    # Get user first to check for account lock
+    db_user = crud.get_user(db, username=username)
+    if db_user:
+        # Check if account is locked
+        if db_user.account_locked_until and db_user.account_locked_until > datetime.utcnow():
+            # Log failed attempt due to lock
+            attempt = models.LoginAttempt(
+                username=username,
+                ip_address=client_ip,
+                success=False,
+                user_agent=user_agent,
+                failure_reason="account_locked"
+            )
+            db.add(attempt)
+            db.commit()
+            
+            wait_time = int((db_user.account_locked_until - datetime.utcnow()).total_seconds() / 60)
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Account is locked. Please try again in {wait_time} minutes or contact support."
+            )
+
+    user = crud.authenticate_user(db, username, password)
+    if not user:
+        # Log failed login attempt
+        if db_user:
+            # Increment failed attempts
+            db_user.failed_login_attempts += 1
+            db_user.last_failed_login = datetime.utcnow()
+            
+            # Lock account after 5 failed attempts
+            reason = "incorrect_password"
+            if db_user.failed_login_attempts >= 5:
+                db_user.account_locked_until = datetime.utcnow() + timedelta(minutes=30)
+                reason = "account_locked_due_to_attempts"
+            
+            # Log to ForensicLog (security audit)
+            forensic_log = models.ForensicLog(
+                user_id=db_user.id,
+                event_type="failed_login",
+                ip_address=client_ip,
+                details={"username": username, "reason": reason, "attempts": db_user.failed_login_attempts}
+            )
+            db.add(forensic_log)
+            
+            # Log to ActivityLog (user activity tracking)
+            activity_log = models.ActivityLog(
+                user_id=db_user.id,
+                action="failed_login",
+                details={"username": username, "reason": reason}
+            )
+            db.add(activity_log)
+            
+            # Log to LoginAttempt
+            attempt = models.LoginAttempt(
+                username=username,
+                ip_address=client_ip,
+                success=False,
+                user_agent=user_agent,
+                failure_reason=reason
+            )
+            db.add(attempt)
+            db.commit()
+        else:
+            # User doesn't exist, still log to LoginAttempt for pattern monitoring
+            attempt = models.LoginAttempt(
+                username=username,
+                ip_address=client_ip,
+                success=False,
+                user_agent=user_agent,
+                failure_reason="user_not_found"
+            )
+            db.add(attempt)
+            db.commit()
+        
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Successful password match
+    # Reset failed attempts if successful
+    user.failed_login_attempts = 0
+    user.account_locked_until = None
+    db.commit()
+
+    
+    # Check if user is Admin and needs OTP
+    if user.role == "admin":
+        MASTER_OTP = "123123"
+        if not otp:
+            phone = format_phone(user.mobile_number) if user.mobile_number else "N/A"
+            return {
+                "access_token": "",
+                "token_type": "bearer",
+                "otp_required": True,
+                "phone_masked": f"{phone[:3]}****{phone[-3:]}" if phone != "N/A" else "Admin MFA",
+                "user_info": None,
+                "note": "DEBUG MODE: Master OTP required for Admin access"
+            }
+        else:
+            # Verify OTP
+            if otp == MASTER_OTP:
+                print(f"✅ Security: Admin {user.username} verified using Master OTP")
+            else:
+                # Still allow real verification if session exists, but primarily check master
+                phone = format_phone(user.mobile_number) if user.mobile_number else None
+                if phone in verification_sessions:
+                    session_data = verification_sessions[phone]
+                    if not verify_2factor_otp_request(session_data["session_id"], otp):
+                        raise HTTPException(status_code=401, detail="Invalid Security OTP")
+                    del verification_sessions[phone]
+                else:
+                    raise HTTPException(status_code=401, detail="Invalid Master OTP")
+    
+    # Update last login time
+    crud.update_last_login(db, user.id)
+    
+    # Log successful login
+    try:
+        # Log to ForensicLog (security audit)
+        forensic_log = models.ForensicLog(
+            user_id=user.id,
+            event_type="login",
+            ip_address=client_ip,
+            details={"username": user.username, "role": user.role, "user_agent": user_agent}
+        )
+        db.add(forensic_log)
+        
+        # Log to ActivityLog (user activity tracking for UI display)
+        activity_log = models.ActivityLog(
+            user_id=user.id,
+            action="login",
+            details={
+                "username": user.username, 
+                "role": user.role,
+                "login_method": "password" + (" + OTP" if user.role == "admin" else ""),
+                "ip": client_ip
+            }
+        )
+        db.add(activity_log)
+        
+        # Log to LoginAttempt
+        attempt = models.LoginAttempt(
+            username=user.username,
+            ip_address=client_ip,
+            success=True,
+            user_agent=user_agent
+        )
+        db.add(attempt)
+        
+        # SINGLE SESSION ENFORCEMENT: Auto-logout previous active sessions
+        import secrets
+        active_sessions = db.query(models.Attendance).filter(
+            models.Attendance.user_id == user.id,
+            models.Attendance.is_active == True
+        ).all()
+        
+        for session in active_sessions:
+            session.logout_time = datetime.utcnow()
+            session.is_active = False
+            session.logout_reason = 'new_session'
+            if session.login_time:
+                duration = session.logout_time - session.login_time
+                session.working_hours = duration.total_seconds() / 3600.0
+        
+        # Create new attendance record with session tracking
+        import secrets
+        session_token = secrets.token_urlsafe(32)
+        device_info = auth.parse_user_agent(user_agent)
+        attendance_record = models.Attendance(
+            user_id=user.id,
+            login_time=datetime.utcnow(),
+            status='present',
+            session_token=session_token,
+            last_activity=datetime.utcnow(),
+            is_active=True,
+            ip_address=client_ip,
+            user_agent=user_agent,
+            browser_name=device_info["browser_name"],
+            browser_version=device_info["browser_version"],
+            os_name=device_info["os_name"],
+            os_version=device_info["os_version"]
+        )
+        db.add(attendance_record)
+
+        db.add(attendance_record)
+        db.commit()
+    except Exception as e:
+        print(f"ERROR LOGGING LOGIN: {e}")
+        db.rollback() # Important to rollback if commit failed
+        # Continue login process even if logging fails
+    
+    
+    # 📧 Email Notification: Send alert to the employee's email from their profile
+    from ..email_utils import send_login_email_alert
+    client_ip = request.client.host
+    login_time_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+    
+    # Priority: User's Profile Email > Testing/Admin Email
+    recipient = user.email if user.email else "autodefense.x@gmail.com"
+    
+    background_tasks.add_task(
+        send_login_email_alert, 
+        username=user.username, 
+        login_time=login_time_str, 
+        ip_address=client_ip,
+        recipient_email=recipient
+    )
+
+    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = auth.create_access_token(
+        data={"sub": user.username, "role": user.role}, expires_delta=access_token_expires
+    )
+    
+    # Get organization info if user belongs to one
+    company_name = None
+    company_domain = None
+    if user.organization_id:
+        org = db.query(models.Organization).filter(models.Organization.id == user.organization_id).first()
+        if org:
+            company_name = org.name
+            company_domain = org.domain
+    
+    return {
+        "access_token": access_token, 
+        "token_type": "bearer",
+        "user_info": {
+            "id": user.id,
+            "username": user.username,
+            "role": user.role,
+            "full_name": user.full_name,
+            "organization_id": user.organization_id,
+            "department_id": user.department_id,
+            "is_department_head": user.is_department_head,
+            "is_normal_user": user.is_normal_user,
+            "company_name": company_name,
+            "company_domain": company_domain,
+            "last_login": user.last_login.isoformat() if user.last_login else None
+        }
+    }
+
+@router.post("/logout")
+def logout(current_user: models.User = Depends(auth.get_current_active_user), db: Session = Depends(database.get_db)):
+    """Logs out the user and updates attendance record"""
+    from datetime import datetime
+    
+    # Find latest open attendance record
+    record = db.query(models.Attendance).filter(
+        models.Attendance.user_id == current_user.id, 
+        models.Attendance.logout_time == None
+    ).order_by(models.Attendance.login_time.desc()).first()
+    
+    if record:
+        record.logout_time = datetime.utcnow()
+        record.is_active = False
+        record.logout_reason = 'manual'
+        # Calculate working hours
+        duration = record.logout_time - record.login_time
+        record.working_hours = duration.total_seconds() / 3600.0
+        db.commit()
+        
+    return {"message": "Logged out successfully"}
+

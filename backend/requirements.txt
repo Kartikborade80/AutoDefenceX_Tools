@@ -1,0 +1,20 @@
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+python-multipart
+python-jose[cryptography]
+passlib[bcrypt]
+psutil
+websockets
+# For SQLite/Postgres
+aiosqlite
+google-genai
+# Additional dependencies
+python-dotenv
+resend
+gunicorn
+uvicorn[standard]
+apscheduler
+pytz
+httpagentparser

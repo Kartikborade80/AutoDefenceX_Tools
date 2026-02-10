@@ -1,0 +1,44 @@
+/* Solid Blue Edit Button (matches screenshot) */
+.btn-edit-solid {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 6px 20px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-edit-solid:hover {
+    background: #2563eb;
+    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4);
+}
+
+/* Exact Badge Colors from Screenshot */
+.badge.yellow-solid {
+    background: #fbbf24;
+    /* Exact yellow from screenshot */
+    color: #000000;
+    border: none;
+    padding: 4px 14px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    display: inline-block;
+}
+
+.badge.blue-solid {
+    background: #3b82f6;
+    /* Exact blue from screenshot */
+    color: #ffffff;
+    border: none;
+    padding: 4px 14px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    display: inline-block;
+}

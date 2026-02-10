@@ -1,0 +1,38 @@
+/* EndpointList CSS - inherited from Dashboard.css */
+.endpoint-container {
+    padding: 2rem;
+    background: radial-gradient(circle at top right, #1a202c, #0f1218);
+    min-height: 100vh;
+}
+
+.table-card {
+    background: var(--bg-acrylic);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.status-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.status-indicator.online {
+    background: var(--success);
+    box-shadow: 0 0 10px var(--success);
+}
+
+.status-indicator.offline {
+    background: var(--text-secondary);
+}
+
+.status-indicator.isolated {
+    background: var(--danger);
+    box-shadow: 0 0 10px var(--danger);
+}

@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: autodefencex
+    env: python
+    buildCommand: "pip install -r backend/requirements.txt && cd frontend && npm install && npm run build"
+    startCommand: "cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DATABASE_URL
+        value: sqlite:///./autodefencex_v2.db
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_ORIGINS
+        value: "*"
