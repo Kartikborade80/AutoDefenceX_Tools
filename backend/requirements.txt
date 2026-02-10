@@ -19,5 +19,5 @@ apscheduler
 pytz
 httpagentparser
 requests
-bcrypt
+bcrypt==3.2.2
 email-validator
