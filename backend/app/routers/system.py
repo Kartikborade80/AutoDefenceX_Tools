@@ -3,9 +3,14 @@ import subprocess
 import json
 import logging
 
+import platform
+import psutil
+
 router = APIRouter(prefix="/system", tags=["system"])
 
 def run_powershell(cmd):
+    if platform.system() != "Windows":
+        return None
     try:
         completed = subprocess.run(
             ["powershell", "-Command", f"{cmd} | ConvertTo-Json -Depth 2"],
@@ -22,6 +27,35 @@ def run_powershell(cmd):
 
 @router.get("/info")
 def get_system_info():
+    # Linux / Non-Windows Support (Render/Docker)
+    if platform.system() != "Windows":
+        try:
+            mem = psutil.virtual_memory()
+            total_gb = round(mem.total / (1024**3), 2)
+            free_gb = round(mem.available / (1024**3), 2)
+            
+            return {
+                "hostname": platform.node(),
+                "os": {
+                    "name": f"{platform.system()} {platform.release()}",
+                    "version": platform.version(),
+                    "arch": platform.machine()
+                },
+                "cpu": {
+                    "name": f"{platform.processor()} ({psutil.cpu_count()} cores)",
+                    "cores": psutil.cpu_count(logical=False) or 1,
+                    "logical": psutil.cpu_count(logical=True) or 1
+                },
+                "ram": {
+                    "total_gb": total_gb,
+                    "free_gb": free_gb,
+                    "used_gb": round(total_gb - free_gb, 2),
+                    "percent_used": mem.percent
+                }
+            }
+        except Exception as e:
+             return {"error": f"Failed to fetch Linux system info: {str(e)}"}
+
     # Fetch Basic Info
     # CsName = Hostname, OsName = OS, WindowsVersion = Build
     cmd_basic = "Get-ComputerInfo | Select-Object -Property CsName, OsName, WindowsVersion, OsArchitecture, CsProcessors, CsTotalPhysicalMemory"
