@@ -19,7 +19,12 @@ if DATABASE_URL:
     if DATABASE_URL.startswith("postgres://"):
         DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
     SQLALCHEMY_DATABASE_URL = DATABASE_URL
-    connect_args = {}  # PostgreSQL doesn't need check_same_thread
+    
+    # Check if using SQLite (needs specific args for multithreading)
+    if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
+        connect_args = {"check_same_thread": False}
+    else:
+        connect_args = {}
 else:
     # Local development or bundled app: Use SQLite
     # Determine the database location
