@@ -94,6 +94,33 @@ const SystemInfo = () => {
                     </div>
                 </div>
 
+                {/* Hardware Specs (Board/BIOS) */}
+                <div className="card" style={{ borderTop: '3px solid #60a5fa' }}>
+                    <div className="card-header">
+                        <h3><CircuitBoard size={22} color="#60a5fa" /> Hardware</h3>
+                    </div>
+                    <div className="desc">
+                        <div style={{ marginBottom: '10px' }}>
+                            <div style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>Manufacturer</div>
+                            <div style={{ fontWeight: '500' }}>{info.os.manufacturer || 'Unknown'}</div>
+                        </div>
+                        <div style={{ marginBottom: '10px' }}>
+                            <div style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>Model</div>
+                            <div style={{ fontWeight: '500' }}>{info.os.model || 'Unknown'}</div>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                            <div>
+                                <div style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>BIOS</div>
+                                <div style={{ fontSize: '0.9rem' }}>{info.os.bios || 'N/A'}</div>
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>Boot Time</div>
+                                <div style={{ fontSize: '0.9rem' }}>{info.os.boot_time || 'N/A'}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 {/* RAM Specs */}
                 <div className="card" style={{ borderTop: '3px solid #34d399' }}>
                     <div className="card-header">

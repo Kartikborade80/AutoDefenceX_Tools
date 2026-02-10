@@ -51,8 +51,14 @@ def report_agent_data(
     # Update Endpoint Basic Info
     endpoint.last_seen = datetime.utcnow()
     endpoint.status = "online"
-    # Store OS details as JSON string in os_details
-    endpoint.os_details = json.dumps(sys_info.get("os", {}))
+    
+    # Store OS and Hardware details as JSON string in os_details
+    # Merge keys if possible
+    os_data = sys_info.get("os", {})
+    hardware_data = sys_info.get("hardware", {})
+    full_details = {**os_data, **hardware_data}
+    
+    endpoint.os_details = json.dumps(full_details)
     endpoint.trust_score = int(def_status.get("secure_score", "100/100").split("/")[0])
     
     # 2. Update System Info
