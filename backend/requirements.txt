@@ -18,3 +18,4 @@ uvicorn[standard]
 apscheduler
 pytz
 httpagentparser
+requests
