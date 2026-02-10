@@ -134,3 +134,37 @@ else:
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "service": "AutoDefenceX-Core"}
+
+@app.get("/debug/auth")
+async def debug_auth():
+    """Debug endpoint to check if auth dependencies are loaded correctly"""
+    status = {"status": "ok", "details": {}}
+    
+    # Check Passlib/Bcrypt
+    try:
+        from passlib.context import CryptContext
+        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+        hash = pwd_context.hash("test")
+        status["details"]["bcrypt"] = "working"
+    except Exception as e:
+        status["status"] = "error"
+        status["details"]["bcrypt"] = str(e)
+
+    # Check JOSE
+    try:
+        import jose
+        from jose import jwt
+        status["details"]["jose"] = f"working (ver: {jose.__version__})"
+    except Exception as e:
+        status["status"] = "error"
+        status["details"]["jose"] = str(e)
+        
+    # Check Requests
+    try:
+        import requests
+        status["details"]["requests"] = f"working (ver: {requests.__version__})"
+    except Exception as e:
+        status["status"] = "error"
+        status["details"]["requests"] = str(e)
+
+    return status
