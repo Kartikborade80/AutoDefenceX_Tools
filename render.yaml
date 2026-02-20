@@ -12,3 +12,5 @@ services:
         generateValue: true
       - key: ALLOWED_ORIGINS
         value: "*"
+      - key: TFACTOR_API_KEY
+        value: "DEACTIVATED"
