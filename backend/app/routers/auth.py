@@ -172,7 +172,12 @@ async def login_for_access_token(
         else:
             # Verify REAL OTP
             phone = format_phone(user.mobile_number) if user.mobile_number else "0000000000"
-            if phone in verification_sessions:
+            
+            # DEMO BYPASS: Allow 000000 if email password is not set
+            is_demo_mode = not os.environ.get("EMAIL_PASSWORD")
+            if is_demo_mode and otp == "000000":
+                print(f"⚠️ Security: Admin {user.username} used DEMO OTP bypass (000000)")
+            elif phone in verification_sessions:
                 session_data = verification_sessions[phone]
                 if not verify_2factor_otp_request(session_data["otp_code"], otp):
                     raise HTTPException(status_code=401, detail="Invalid Security OTP")
