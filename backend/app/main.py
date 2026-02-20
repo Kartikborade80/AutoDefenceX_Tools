@@ -138,6 +138,39 @@ app.include_router(otp.router)
 app.include_router(organizations.router)
 app.include_router(agent.router)
 
+def seed_database():
+    from .database import SessionLocal
+    from . import crud, schemas
+    db = SessionLocal()
+    try:
+        # Check if any users exist
+        user = crud.get_user(db, "admin")
+        if not user:
+            print("🌱 Seeding Database: Creating default admin user...")
+            admin_in = schemas.UserCreate(
+                username="admin",
+                password="Pass@123",
+                role="admin",
+                full_name="System Administrator",
+                is_normal_user=True,
+                is_department_head=True,
+                email="admin@autodefencex.com"
+            )
+            crud.create_user(db, admin_in)
+            print("✅ Seeding Complete: Admin user 'admin' created with password 'Pass@123'")
+        else:
+            print("ℹ️ Database Seeding: Admin user already exists.")
+    except Exception as e:
+        print(f"❌ Error Seeding Database: {e}")
+    finally:
+        db.close()
+
+# Run seeding on startup
+seed_database()
+
+# Run seeding on startup
+seed_database()
+
 @app.websocket("/ws/{token}")
 async def websocket_endpoint(websocket: WebSocket, token: str):
     try:

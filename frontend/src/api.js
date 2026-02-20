@@ -7,7 +7,10 @@ const getApiUrl = () => {
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
         return 'http://localhost:8000';
     }
-    // In production (Render), backend is on same origin, so use relative path
+    // In production (Render), use the provided deployment URL or relative path
+    if (window.location.hostname === 'autodefencex.onrender.com') {
+        return 'https://autodefencex.onrender.com';
+    }
     return '';
 };
 
