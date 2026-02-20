@@ -102,20 +102,20 @@ const SystemInfo = () => {
                     <div className="desc">
                         <div style={{ marginBottom: '10px' }}>
                             <div style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>Manufacturer</div>
-                            <div style={{ fontWeight: '500' }}>{info.os.manufacturer || 'Unknown'}</div>
+                            <div style={{ fontWeight: '500' }}>{info.hardware?.manufacturer || 'Unknown'}</div>
                         </div>
                         <div style={{ marginBottom: '10px' }}>
                             <div style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>Model</div>
-                            <div style={{ fontWeight: '500' }}>{info.os.model || 'Unknown'}</div>
+                            <div style={{ fontWeight: '500' }}>{info.hardware?.model || 'Unknown'}</div>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                             <div>
                                 <div style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>BIOS</div>
-                                <div style={{ fontSize: '0.9rem' }}>{info.os.bios || 'N/A'}</div>
+                                <div style={{ fontSize: '0.9rem' }}>{info.hardware?.bios || 'N/A'}</div>
                             </div>
                             <div>
                                 <div style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>Boot Time</div>
-                                <div style={{ fontSize: '0.9rem' }}>{info.os.boot_time || 'N/A'}</div>
+                                <div style={{ fontSize: '0.9rem' }}>{info.hardware?.boot_time || 'N/A'}</div>
                             </div>
                         </div>
                     </div>
@@ -148,15 +148,7 @@ const SystemInfo = () => {
                     </div>
                 </div>
 
-                {/* Raw API Dump (for "Original Data" confirmation) */}
-                <div className="card full-width">
-                    <div className="card-header">
-                        <h3><Database size={22} /> Raw System Data</h3>
-                    </div>
-                    <div style={{ maxHeight: '200px', overflowY: 'auto', background: 'rgba(0,0,0,0.3)', padding: '15px', borderRadius: '8px', fontFamily: 'monospace', fontSize: '0.85rem', color: '#e2e8f0' }}>
-                        <pre>{JSON.stringify(info, null, 2)}</pre>
-                    </div>
-                </div>
+
             </div>
         </div>
     );

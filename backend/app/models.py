@@ -55,7 +55,7 @@ class User(Base):
     
     # Access Control & Expiry
     access_expiry = Column(DateTime, nullable=True)
-    password_expiry_days = Column(Integer, default=90)
+    password_expiry_days = Column(Integer, default=30)
     force_password_change = Column(Boolean, default=False)
     created_by = Column(String, nullable=True) # Admin, HR Manager, etc.
     
@@ -92,6 +92,10 @@ class User(Base):
     department = relationship("Department", back_populates="users", foreign_keys=[department_id])
     applied_policies = relationship("Policy", back_populates="applied_to_user")
     forensic_logs = relationship("ForensicLog", back_populates="user")
+
+    @property
+    def department_name(self):
+        return self.department.name if self.department else None
 
 class ActivityLog(Base):
     __tablename__ = "activity_logs"

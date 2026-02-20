@@ -12,7 +12,6 @@ aiosqlite
 google-genai
 # Additional dependencies
 python-dotenv
-resend
 gunicorn
 uvicorn[standard]
 apscheduler

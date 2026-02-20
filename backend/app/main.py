@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import os
 from dotenv import load_dotenv
-from .routers import users, endpoints, scans, auth, threat_intel, reports, departments, policies, forensics, sessions, chatbot, otp, organizations, attendance, tasks, messages, defender, system, search, analytics, agent
+from .routers import users, endpoints, scans, auth, threat_intel, reports, departments, policies, forensics, sessions, chatbot, otp, organizations, attendance, tasks, messages, defender, system, search, analytics, agent, password
 from .websockets import manager
 from .auth import get_current_user_from_token
 from fastapi import WebSocket, WebSocketDisconnect, Query
@@ -35,7 +35,22 @@ app = FastAPI(
 
 # CORS Configuration from environment
 ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "*")
-origins = ALLOWED_ORIGINS.split(",") if ALLOWED_ORIGINS != "*" else ["*"]
+
+if ALLOWED_ORIGINS == "*":
+    # Explicitly list common local origins for development when "*" is set
+    # Browser security does not allow "*" with allow_credentials=True
+    origins = [
+        "http://localhost:5173",  # Vite default
+        "http://localhost:5178",  # User's current port
+        "http://localhost:3000",  # React default
+        "http://localhost:8000",  # Backend itself
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5178",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:8000",
+    ]
+else:
+    origins = ALLOWED_ORIGINS.split(",")
 
 app.add_middleware(
     CORSMiddleware,
@@ -101,6 +116,7 @@ async def debug_auth():
     return status
 
 app.include_router(auth.router)
+app.include_router(password.router)
 app.include_router(users.router)
 app.include_router(endpoints.router)
 app.include_router(scans.router)

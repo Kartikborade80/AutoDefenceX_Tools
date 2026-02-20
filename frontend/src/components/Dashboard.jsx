@@ -19,6 +19,7 @@ import './Dashboard.css';
 import './DashboardEnhanced.css';
 import IncidentReporting from './IncidentReporting';
 import TrustScore from './TrustScore';
+import PasswordChangeModal from './PasswordChangeModal';
 
 const useLiveData = (fetcher, interval = 5000) => {
     const [data, setData] = useState(null);
@@ -51,11 +52,17 @@ const Dashboard = () => {
     const [liveActivities, setLiveActivities] = useState([
         { time: 'System', desc: 'Real-time monitoring active.' }
     ]);
+    const [showPasswordChange, setShowPasswordChange] = useState(false);
 
     useEffect(() => {
         const storedInfo = JSON.parse(localStorage.getItem('user_info') || '{}');
         setUserInfo(storedInfo);
         setRole(localStorage.getItem('role') || 'user');
+
+        // Check if password change is required
+        if (storedInfo.must_change_password) {
+            setShowPasswordChange(true);
+        }
     }, []);
 
     const { data: liveStats } = useLiveData(async () => {
@@ -110,6 +117,12 @@ const Dashboard = () => {
     if (role !== 'admin') {
         return (
             <div className="dashboard-container fade-in">
+                <PasswordChangeModal
+                    isOpen={showPasswordChange}
+                    onClose={() => setShowPasswordChange(false)}
+                    isForced={true}
+                    userInfo={userInfo}
+                />
                 <ScanningPopup
                     isOpen={showScanPopup}
                     onClose={() => setShowScanPopup(false)}
@@ -238,6 +251,12 @@ const Dashboard = () => {
 
     return (
         <div className="dashboard-container fade-in">
+            <PasswordChangeModal
+                isOpen={showPasswordChange}
+                onClose={() => setShowPasswordChange(false)}
+                isForced={true}
+                userInfo={userInfo}
+            />
             <ScanningPopup
                 isOpen={showScanPopup}
                 onClose={() => setShowScanPopup(false)}

@@ -177,6 +177,7 @@ class UserBase(BaseModel):
     email: Optional[str] = None
     phone: Optional[str] = None
     department_id: Optional[int] = None
+    department_name: Optional[str] = None
     designation_code: Optional[str] = None
     account_type: Optional[str] = None
     device_id: Optional[str] = None

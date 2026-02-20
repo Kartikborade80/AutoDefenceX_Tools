@@ -6,6 +6,8 @@ from .. import models
 import platform
 import psutil
 import json
+import subprocess
+import logging
 
 router = APIRouter(prefix="/system", tags=["system"])
 
@@ -109,45 +111,55 @@ def get_system_info(
         except Exception as e:
              return {"error": f"Failed to fetch Linux system info: {str(e)}"}
 
-    # Fetch Basic Info
-    # CsName = Hostname, OsName = OS, WindowsVersion = Build
-    cmd_basic = "Get-ComputerInfo | Select-Object -Property CsName, OsName, WindowsVersion, OsArchitecture, CsProcessors, CsTotalPhysicalMemory"
-    data = run_powershell(cmd_basic)
+    # Fetch OS, RAM, BootTime, Hostname (Win32_OperatingSystem)
+    cmd_os = "Get-CimInstance Win32_OperatingSystem | Select-Object -Property CSName, Caption, Version, OSArchitecture, FreePhysicalMemory, TotalVisibleMemorySize, LastBootUpTime"
+    os_data = run_powershell(cmd_os)
 
-    # Fetch CPU detailed (Get-ComputerInfo's CsProcessors can be complex object)
-    # WMI often cleaner for simple "Name"
+    # Fetch Hardware (Manufacturer, Model) (Win32_ComputerSystem)
+    cmd_hw = "Get-CimInstance Win32_ComputerSystem | Select-Object -Property Manufacturer, Model"
+    hw_data = run_powershell(cmd_hw)
+
+    # Fetch BIOS (Win32_Bios)
+    cmd_bios = "Get-CimInstance Win32_Bios | Select-Object -Property SerialNumber"
+    bios_data = run_powershell(cmd_bios)
+
+    # Fetch CPU (Win32_Processor)
     cmd_cpu = "Get-CimInstance Win32_Processor | Select-Object -Property Name, NumberOfCores, NumberOfLogicalProcessors"
     cpu_data = run_powershell(cmd_cpu)
 
-    # Fetch RAM Free
-    cmd_ram = "Get-CimInstance Win32_OperatingSystem | Select-Object -Property FreePhysicalMemory, TotalVisibleMemorySize"
-    ram_data = run_powershell(cmd_ram)
-
-    if not data:
-        return {"error": "Failed to fetch system info"}
+    if not os_data:
+         # Fallback or error
+         return {"error": "Failed to fetch system info"}
 
     # Handle lists vs objects
-    if isinstance(data, list): data = data[0]
+    if isinstance(os_data, list): os_data = os_data[0]
+    if isinstance(hw_data, list): hw_data = hw_data[0]
+    if isinstance(bios_data, list): bios_data = bios_data[0]
     if isinstance(cpu_data, list): cpu_data = cpu_data[0]
-    if isinstance(ram_data, list): ram_data = ram_data[0]
 
-    # Parsing / Formatting
-    total_ram_gb = round(int(data.get("CsTotalPhysicalMemory", 0)) / (1024**3), 2)
-    free_ram_gb = round(int(ram_data.get("FreePhysicalMemory", 0)) / (1024*1024), 2) # FreePhysicalMemory is in KB usually from CIM
-    # Wait, Win32_OperatingSystem FreePhysicalMemory is in KB. 
-    # Let's double check. Yes KB.
-    # TotalVisible is also KB.
-    # CsTotalPhysicalMemory from Get-ComputerInfo is Bytes.
-    
-    # Recalculate Free from CIM to be safe
-    free_ram_gb = round(int(ram_data.get("FreePhysicalMemory", 0)) / 1024 / 1024, 2)
+    # Parsing / Formatting variables
+    # RAM
+    total_ram_kb = int(os_data.get("TotalVisibleMemorySize", 0))
+    free_ram_kb = int(os_data.get("FreePhysicalMemory", 0))
+    total_ram_gb = round(total_ram_kb / 1024 / 1024, 2)
+    free_ram_gb = round(free_ram_kb / 1024 / 1024, 2)
+
+    # Boot Time
+    boot_time = os_data.get("LastBootUpTime", "Unknown")
+    import re
+    if isinstance(boot_time, str) and "/Date(" in boot_time:
+        match = re.search(r"\d+", boot_time)
+        if match:
+             timestamp = int(match.group()) / 1000
+             from datetime import datetime
+             boot_time = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
 
     return {
-        "hostname": data.get("CsName", "Unknown"),
+        "hostname": os_data.get("CSName", "Unknown"),
         "os": {
-            "name": data.get("OsName", "Windows"),
-            "version": data.get("WindowsVersion", "Unknown"),
-            "arch": data.get("OsArchitecture", "Unknown")
+            "name": os_data.get("Caption", "Windows"),
+            "version": os_data.get("Version", "Unknown"),
+            "arch": os_data.get("OSArchitecture", "Unknown")
         },
         "cpu": {
             "name": cpu_data.get("Name", "Unknown Processor"),
@@ -159,5 +171,11 @@ def get_system_info(
             "free_gb": free_ram_gb,
             "used_gb": round(total_ram_gb - free_ram_gb, 2),
             "percent_used": round(((total_ram_gb - free_ram_gb) / total_ram_gb) * 100, 1) if total_ram_gb > 0 else 0
+        },
+        "hardware": {
+            "manufacturer": hw_data.get("Manufacturer", "Unknown") if hw_data else "Unknown",
+            "model": hw_data.get("Model", "Unknown") if hw_data else "Unknown",
+            "bios": bios_data.get("SerialNumber", "Unknown") if bios_data else "Unknown",
+            "boot_time": boot_time
         }
     }

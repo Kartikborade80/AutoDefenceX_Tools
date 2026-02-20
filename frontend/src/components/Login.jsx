@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from '../api';
 import { Eye, EyeOff, LogIn, Lock, XCircle, User, Shield } from 'lucide-react';
 import './Login.css';
+import PasswordChangeModal from './PasswordChangeModal';
 
 const Login = ({ onLogin }) => {
     const navigate = useNavigate();
@@ -26,6 +27,10 @@ const Login = ({ onLogin }) => {
     const [checkingUsername, setCheckingUsername] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [loginSuccess, setLoginSuccess] = useState(false);
+
+    // Password Change Modal State
+    const [showPasswordChange, setShowPasswordChange] = useState(false);
+    const [passwordChangeUserInfo, setPasswordChangeUserInfo] = useState(null);
 
     // Registration State
     const [showRegister, setShowRegister] = useState(false);
@@ -167,6 +172,14 @@ const Login = ({ onLogin }) => {
             }
 
             const { access_token, user_info } = response.data;
+
+            // Validate token exists and is not empty
+            if (!access_token || access_token === '') {
+                setError('Authentication failed - no token received');
+                setIsLoading(false);
+                return;
+            }
+
             localStorage.setItem('token', access_token);
 
             // Store comprehensive user info and login time
@@ -613,6 +626,14 @@ const Login = ({ onLogin }) => {
                     </button>
                 </div>
             </div>
+
+            {/* Password Change Modal */}
+            <PasswordChangeModal
+                isOpen={showPasswordChange}
+                onClose={() => setShowPasswordChange(false)}
+                isForced={true}
+                userInfo={passwordChangeUserInfo}
+            />
         </div>
     );
 };

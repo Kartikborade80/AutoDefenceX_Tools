@@ -29,7 +29,11 @@ const useWebSockets = (onMessage) => {
             }
         };
 
-        ws.current.onclose = () => {
+        ws.current.onclose = (event) => {
+            if (event.code === 1008) {
+                console.error('❌ WebSocket Auth Failed. Please login again.');
+                return; // Do not reconnect
+            }
             console.log('❌ WebSocket Disconnected. Reconnecting...');
             setTimeout(connect, 5000);
         };

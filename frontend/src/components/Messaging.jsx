@@ -263,10 +263,12 @@ const Messaging = () => {
                                                 </div>
                                                 <div className="contact-info">
                                                     <div className="contact-name">{contact.full_name || contact.username}</div>
-                                                    {contact.department_name && (
-                                                        <div className="contact-dept">{contact.department_name}</div>
-                                                    )}
-                                                    <div className="contact-role">{contact.role}</div>
+                                                    <div className="contact-dept">{contact.department_name}</div>
+                                                    <div className="contact-role">
+                                                        {contact.is_department_head
+                                                            ? `${contact.department_name || 'Department'} Head`
+                                                            : (contact.department_name || contact.role)}
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}
@@ -289,10 +291,12 @@ const Messaging = () => {
                                         </div>
                                         <div className="contact-info">
                                             <div className="contact-name">{contact.full_name || contact.username}</div>
-                                            {contact.department_name && (
-                                                <div className="contact-dept">{contact.department_name}</div>
-                                            )}
-                                            <div className="contact-role">{contact.role}</div>
+                                            <div className="contact-dept">{contact.department_name}</div>
+                                            <div className="contact-role">
+                                                {contact.is_department_head
+                                                    ? `${contact.department_name || 'Department'} Head`
+                                                    : (contact.department_name || contact.role)}
+                                            </div>
                                         </div>
                                     </div>
                                 ))

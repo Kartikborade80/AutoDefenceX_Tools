@@ -54,8 +54,12 @@ async def login_for_access_token(
             db_user.last_failed_login = datetime.utcnow()
             
             # Lock account after 5 failed attempts
+            # Force password change after 30 failed attempts
             reason = "incorrect_password"
-            if db_user.failed_login_attempts >= 5:
+            if db_user.failed_login_attempts >= 30:
+                db_user.must_change_password = True
+                reason = "password_change_required_attempts"
+            elif db_user.failed_login_attempts >= 5:
                 db_user.account_locked_until = datetime.utcnow() + timedelta(minutes=30)
                 reason = "account_locked_due_to_attempts"
             
@@ -105,6 +109,30 @@ async def login_for_access_token(
         )
     
     # Successful password match
+    # Check if user is using default password (Pass@123)
+    from passlib.context import CryptContext
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+    
+    # List of default passwords to check
+    default_passwords = ["Pass@123", "Pass123", "Password@123", "Password123"]
+    using_default_password = any(pwd_context.verify(default_pwd, user.hashed_password) for default_pwd in default_passwords)
+    
+    if using_default_password:
+        # Set flag but allow login
+        user.must_change_password = True
+        db.commit()
+    
+    # Check password expiry (30 days)
+    password_expired = False
+    if user.password_changed_at:
+        password_age = datetime.utcnow() - user.password_changed_at
+        password_expired = password_age.days >= (user.password_expiry_days or 30)
+    
+    # Set must_change_password if expired
+    if password_expired:
+        user.must_change_password = True
+        db.commit()
+    
     # Reset failed attempts if successful
     user.failed_login_attempts = 0
     user.account_locked_until = None
@@ -113,31 +141,47 @@ async def login_for_access_token(
     
     # Check if user is Admin and needs OTP
     if user.role == "admin":
-        MASTER_OTP = "123123"
         if not otp:
             phone = format_phone(user.mobile_number) if user.mobile_number else "N/A"
+            
+            # TRIGGER REAL OTP DISPATCH
+            # If user has no phone, we can't send SMS, but we can try Email
+            otp_res = send_2factor_otp_request(
+                phone=user.mobile_number if user.mobile_number else "0000000000",
+                email=user.email
+            )
+            
+            if otp_res.get("success"):
+                # Store the session for the verification step
+                # We use phone as the key in verification_sessions
+                sess_phone = format_phone(user.mobile_number) if user.mobile_number else "0000000000"
+                verification_sessions[sess_phone] = {
+                    "session_id": otp_res.get("session_id"),
+                    "otp_code": otp_res.get("otp_code"),
+                    "created_at": datetime.utcnow()
+                }
+            
             return {
                 "access_token": "",
                 "token_type": "bearer",
                 "otp_required": True,
                 "phone_masked": f"{phone[:3]}****{phone[-3:]}" if phone != "N/A" else "Admin MFA",
                 "user_info": None,
-                "note": "DEBUG MODE: Master OTP required for Admin access"
+                "note": "A 6-digit verification code has been sent to your registered email/phone."
             }
         else:
-            # Verify OTP
-            if otp == MASTER_OTP:
-                print(f"✅ Security: Admin {user.username} verified using Master OTP")
+            # Verify REAL OTP
+            phone = format_phone(user.mobile_number) if user.mobile_number else "0000000000"
+            if phone in verification_sessions:
+                session_data = verification_sessions[phone]
+                if not verify_2factor_otp_request(session_data["otp_code"], otp):
+                    raise HTTPException(status_code=401, detail="Invalid Security OTP")
+                
+                # Success! Cleanup session
+                del verification_sessions[phone]
+                print(f"✅ Security: Admin {user.username} verified using Real OTP")
             else:
-                # Still allow real verification if session exists, but primarily check master
-                phone = format_phone(user.mobile_number) if user.mobile_number else None
-                if phone in verification_sessions:
-                    session_data = verification_sessions[phone]
-                    if not verify_2factor_otp_request(session_data["session_id"], otp):
-                        raise HTTPException(status_code=401, detail="Invalid Security OTP")
-                    del verification_sessions[phone]
-                else:
-                    raise HTTPException(status_code=401, detail="Invalid Master OTP")
+                raise HTTPException(status_code=401, detail="OTP session expired or not found. Please login again.")
     
     # Update last login time
     crud.update_last_login(db, user.id)
@@ -218,10 +262,13 @@ async def login_for_access_token(
         # Continue login process even if logging fails
     
     
-    # 📧 Email Notification: Send alert to the employee's email from their profile
+    # 📧 Email Notification: Send alert to the user
     from ..email_utils import send_login_email_alert
+    from ..utils.geolocation import get_location_from_ip
+    
     client_ip = request.client.host
     login_time_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+    location = get_location_from_ip(client_ip)
     
     # Priority: User's Profile Email > Testing/Admin Email
     recipient = user.email if user.email else "autodefense.x@gmail.com"
@@ -231,6 +278,7 @@ async def login_for_access_token(
         username=user.username, 
         login_time=login_time_str, 
         ip_address=client_ip,
+        location=location,
         recipient_email=recipient
     )
 
@@ -262,7 +310,8 @@ async def login_for_access_token(
             "is_normal_user": user.is_normal_user,
             "company_name": company_name,
             "company_domain": company_domain,
-            "last_login": user.last_login.isoformat() if user.last_login else None
+            "last_login": user.last_login.isoformat() if user.last_login else None,
+            "must_change_password": user.must_change_password  # Flag for dashboard
         }
     }
 
