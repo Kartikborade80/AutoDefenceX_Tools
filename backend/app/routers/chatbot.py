@@ -15,7 +15,7 @@ router = APIRouter(
 )
 
 # Configure Gemini API from environment variable
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyA8LdcAaaSBEuGTV6jD4HEvKDSrY8L6TOI")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyAEFbCheGjuZ0sgPUxaQnZuOFVXoAcpt2U")
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 # AutoDefenceX context for the AI

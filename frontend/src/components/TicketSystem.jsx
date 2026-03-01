@@ -18,11 +18,6 @@ const TicketSystem = () => {
     const userInfo = JSON.parse(localStorage.getItem('user_info') || '{}');
     const isAdmin = userInfo.role === 'admin';
 
-    useEffect(() => {
-        fetchTickets();
-        fetchDepartments();
-        fetchActiveUsers();
-    }, []);
 
     const fetchTickets = async () => {
         try {
@@ -56,6 +51,12 @@ const TicketSystem = () => {
             console.error("Failed to fetch active users", err);
         }
     };
+
+    useEffect(() => {
+        fetchTickets();
+        fetchDepartments();
+        fetchActiveUsers();
+    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();

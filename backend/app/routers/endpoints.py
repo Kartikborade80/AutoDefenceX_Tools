@@ -20,6 +20,22 @@ def register_endpoint(endpoint: schemas.EndpointCreate, db: Session = Depends(da
     # Pass organization_id from current session user
     return crud.create_endpoint(db=db, endpoint=endpoint, organization_id=current_user.organization_id)
 
+from fastapi.responses import FileResponse
+import os
+
+@router.get("/download-agent")
+def download_agent(current_user: models.User = Depends(auth.get_current_active_user)):
+    """Serve the Agent Installer .exe"""
+    # Use absolute path relative to this file to be safe
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # app/
+    file_path = os.path.join(base_dir, "static", "installers", "DefaultRemoteOffice_Agent.exe")
+    
+    if not os.path.exists(file_path):
+        print(f"File not found at: {file_path}") # Debug log
+        raise HTTPException(status_code=404, detail="Installer not found on server")
+    
+    return FileResponse(path=file_path, filename="DefaultRemoteOffice_Agent.exe", media_type='application/octet-stream')
+
 @router.get("/{endpoint_id}", response_model=schemas.EndpointDetail)
 def read_endpoint(endpoint_id: int, db: Session = Depends(database.get_db),
                   current_user: models.User = Depends(auth.get_current_active_user)):
@@ -205,18 +221,3 @@ def restart_endpoint(endpoint_id: int, db: Session = Depends(database.get_db),
     
     return {"message": f"Restart command sent to {endpoint.hostname}", "status": "pending"}
 
-from fastapi.responses import FileResponse
-import os
-
-@router.get("/download-agent")
-def download_agent(current_user: models.User = Depends(auth.get_current_active_user)):
-    """Serve the Agent Installer .exe"""
-    # Use absolute path relative to this file to be safe
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # app/
-    file_path = os.path.join(base_dir, "static", "installers", "DefaultRemoteOffice_Agent.exe")
-    
-    if not os.path.exists(file_path):
-        print(f"File not found at: {file_path}") # Debug log
-        raise HTTPException(status_code=404, detail="Installer not found on server")
-    
-    return FileResponse(path=file_path, filename="DefaultRemoteOffice_Agent.exe", media_type='application/octet-stream')

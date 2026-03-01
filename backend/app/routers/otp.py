@@ -172,7 +172,7 @@ async def verify_otp(request: VerifyOTPRequest, db: Session = Depends(database.g
         del verification_sessions[phone]
         return {"success": True, "message": "OTP verified successfully", "verified": True}
     else:
-        print(f"❌ DEBUG: Verification failed for {phone} with session {session_id}")
+        print(f"❌ DEBUG: Verification failed for {phone} with session {session_data.get('session_id')}")
         raise HTTPException(status_code=400, detail="Invalid OTP or verification failed. Please check the code.")
 
 @router.post("/forgot-password")

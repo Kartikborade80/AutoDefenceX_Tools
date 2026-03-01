@@ -39,10 +39,6 @@ const UserManagement = () => {
     const [showOTPModal, setShowOTPModal] = useState(false);
     const [otpTargetUser, setOtpTargetUser] = useState(null);
 
-    useEffect(() => {
-        fetchUsers();
-        fetchDepartments();
-    }, []);
 
     const fetchUsers = async () => {
         try {
@@ -67,6 +63,11 @@ const UserManagement = () => {
             console.error('Failed to fetch departments', err);
         }
     };
+
+    useEffect(() => {
+        fetchUsers();
+        fetchDepartments();
+    }, []);
 
     const resetForm = () => {
         setNewUser({
@@ -150,8 +151,9 @@ const UserManagement = () => {
             setTimeout(() => setNotification(''), 3000);
         } catch (err) {
             console.error(err);
-            setNotification('Failed to save user.');
-            setTimeout(() => setNotification(''), 3000);
+            const errorMsg = err.response?.data?.detail || 'Failed to save user.';
+            setNotification(errorMsg);
+            setTimeout(() => setNotification(''), 5000);
         }
     };
 

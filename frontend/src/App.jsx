@@ -24,8 +24,8 @@ import MicrosoftDefender from './components/MicrosoftDefender';
 import ChatbotWidget from './components/ChatbotWidget';
 import DepartmentHeadView from './components/DepartmentHeadView';
 import Attendance from './components/Attendance';
-import Tasks from './components/Tasks';
 import Messaging from './components/Messaging';
+import Tasks from './components/Tasks';
 import SystemInfo from './components/SystemInfo';
 import SecurityDashboard from './components/SecurityDashboard';
 import NetworkScanner from './components/NetworkScanner';
@@ -41,7 +41,7 @@ import './components/ModernButtons.css';
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
   const [userRole, setUserRole] = useState(localStorage.getItem('role') || null);
-  const [loginKey, setLoginKey] = useState(Date.now()); // Force re-mount on login
+  const [loginKey, setLoginKey] = useState(() => Date.now()); // Force re-mount on login
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -101,8 +101,8 @@ function App() {
             <Route path="department-head" element={<DepartmentHeadView />} />
             <Route path="monitoring" element={<Monitoring />} />
             <Route path="attendance" element={<Attendance />} />
-            <Route path="tasks" element={<Tasks />} />
             <Route path="messages" element={<Messaging />} />
+            <Route path="tasks" element={<Tasks />} />
             <Route path="system-info" element={<SystemInfo />} />
             <Route path="security" element={<SecurityDashboard />} />
             <Route path="network-scanning" element={<NetworkScanner />} />

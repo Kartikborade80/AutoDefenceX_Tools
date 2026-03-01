@@ -54,9 +54,6 @@ const Messaging = () => {
         }
     };
 
-    useEffect(() => {
-        fetchContacts();
-    }, []);
 
     // Handle auto-selection from navigation state
     useEffect(() => {
@@ -83,6 +80,10 @@ const Messaging = () => {
             console.error("Failed to fetch contacts", err);
         }
     };
+
+    useEffect(() => {
+        fetchContacts();
+    }, []);
 
     const fetchMessages = async () => {
         if (!userInfo || !userInfo.id) {

@@ -39,3 +39,14 @@ frontend/dist/
 
 # Database - EXCEPTION: We want to track the DB for initial deploy
 !backend/autodefencex_v2.db
+
+# Reports and temporary files
+*.txt
+*.log
+git_status_output.txt
+frontend/build_err.txt
+frontend/build_output.txt
+frontend/build_report*.txt
+frontend/lint_report*.txt
+backend/flake8_report*.txt
+backend/test_out.txt

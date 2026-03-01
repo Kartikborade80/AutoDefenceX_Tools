@@ -4,7 +4,7 @@ const useWebSockets = (onMessage) => {
     const ws = useRef(null);
     const token = localStorage.getItem('token');
 
-    const connect = useCallback(() => {
+    const connect = useCallback(function connectWs() {
         if (!token) return;
 
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -35,7 +35,7 @@ const useWebSockets = (onMessage) => {
                 return; // Do not reconnect
             }
             console.log('❌ WebSocket Disconnected. Reconnecting...');
-            setTimeout(connect, 5000);
+            setTimeout(connectWs, 5000);
         };
 
         ws.current.onerror = (err) => {

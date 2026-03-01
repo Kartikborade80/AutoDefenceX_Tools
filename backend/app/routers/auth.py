@@ -174,10 +174,10 @@ async def login_for_access_token(
             # Verify REAL OTP
             phone = format_phone(user.mobile_number) if user.mobile_number else "0000000000"
             
-            # DEMO BYPASS: Allow 000000 if email password is not set
+            # DEMO BYPASS: Allow 000000 if email password is not set or for test user kartik.borade
             is_demo_mode = not os.environ.get("EMAIL_PASSWORD")
-            if is_demo_mode and otp == "000000":
-                print(f"⚠️ Security: Admin {user.username} used DEMO OTP bypass (000000)")
+            if (is_demo_mode or user.username == "kartik.borade") and otp == "000000":
+                print(f"⚠️ Security: Admin {user.username} used OTP bypass (000000)")
             elif phone in verification_sessions:
                 session_data = verification_sessions[phone]
                 if not verify_2factor_otp_request(session_data["otp_code"], otp):

@@ -185,6 +185,10 @@ const Layout = ({ onLogout }) => {
                                 <div className="sidebar-icon icon-users"><Users size={22} /></div>
                                 <span>User Management</span>
                             </NavLink>
+                            <NavLink to="/tasks" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                                <div className="sidebar-icon icon-tasks"><ClipboardList size={22} /></div>
+                                <span>Task Management</span>
+                            </NavLink>
                             <NavLink to="/departments" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                                 <div className="sidebar-icon icon-departments"><Building size={22} /></div>
                                 <span>Departments</span>
@@ -283,8 +287,9 @@ const Layout = ({ onLogout }) => {
                             </NavLink>
                             <NavLink to="/tasks" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                                 <div className="sidebar-icon icon-tasks"><ClipboardList size={22} /></div>
-                                <span>{userInfo.is_department_head ? "Task Management" : "My Tasks"}</span>
+                                <span>My Tasks</span>
                             </NavLink>
+
                             <NavLink to="/messages" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                                 <div className="sidebar-icon icon-messages"><MessageCircle size={22} /></div>
                                 <span>Message System</span>

@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import os
 from dotenv import load_dotenv
-from .routers import users, endpoints, scans, auth, threat_intel, reports, departments, policies, forensics, sessions, chatbot, otp, organizations, attendance, tasks, messages, defender, system, search, analytics, agent, password
+from .routers import users, endpoints, scans, auth, threat_intel, reports, departments, policies, forensics, sessions, chatbot, otp, organizations, attendance, messages, defender, system, search, analytics, agent, password
 from .websockets import manager
 from .auth import get_current_user_from_token
 from fastapi import WebSocket, WebSocketDisconnect, Query
@@ -18,14 +18,14 @@ from .database import engine, Base
 Base.metadata.create_all(bind=engine)
 
 # Initialize Background Scheduler for Session Cleanup
-from apscheduler.schedulers.background import BackgroundScheduler
-from .tasks.session_cleanup import cleanup_inactive_sessions
+# from apscheduler.schedulers.background import BackgroundScheduler
+# from .tasks.session_cleanup import cleanup_inactive_sessions
 
-scheduler = BackgroundScheduler()
-scheduler.add_job(cleanup_inactive_sessions, 'interval', minutes=5, id='session_cleanup')
-scheduler.start()
+# scheduler = BackgroundScheduler()
+# scheduler.add_job(cleanup_inactive_sessions, 'interval', minutes=5, id='session_cleanup')
+# scheduler.start()
 
-print("✅ Background Scheduler Started: Session cleanup running every 5 minutes")
+# print("✅ Background Scheduler Started: Session cleanup running every 5 minutes")
 
 app = FastAPI(
     title="AutoDefenceX API",
@@ -124,7 +124,6 @@ app.include_router(analytics.router)
 app.include_router(chatbot.router)
 app.include_router(attendance.router)
 app.include_router(reports.router)
-app.include_router(tasks.router)
 app.include_router(messages.router)
 app.include_router(defender.router)
 app.include_router(system.router)

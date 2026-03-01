@@ -12,10 +12,6 @@ const Departments = () => {
     const [users, setUsers] = useState([]);
     const [notification, setNotification] = useState('');
 
-    useEffect(() => {
-        fetchDepartments();
-        fetchUsers();
-    }, []);
 
     const fetchUsers = async () => {
         try {
@@ -40,6 +36,11 @@ const Departments = () => {
             console.error('Failed to fetch departments', err);
         }
     };
+
+    useEffect(() => {
+        fetchDepartments();
+        fetchUsers();
+    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();

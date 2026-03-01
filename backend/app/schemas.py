@@ -187,6 +187,7 @@ class UserBase(BaseModel):
     password_expiry_days: Optional[int] = 90
     force_password_change: Optional[bool] = False
     created_by: Optional[str] = None
+    organization_id: Optional[int] = None
 
 class UserCreate(UserBase):
     password: str

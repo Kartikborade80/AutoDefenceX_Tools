@@ -28,9 +28,17 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(database.get_db)
         raise HTTPException(status_code=400, detail="Username already registered")
     
     # Pass organization_id (either from admin or dept head enforced above)
-    # Pass organization_id (either from admin or dept head enforced above)
-    org_id = user.organization_id if user.organization_id else current_user.organization_id
-    return crud.create_user(db=db, user=user, organization_id=org_id)
+    org_id = getattr(user, 'organization_id', None)
+    if not org_id:
+        org_id = current_user.organization_id
+        
+    try:
+        return crud.create_user(db=db, user=user, organization_id=org_id)
+    except Exception as e:
+        print(f"ERROR creating user: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail="Failed to create user. Check server logs.")
 
 @router.post("/register-public", response_model=schemas.User)
 def register_public(user: schemas.PublicUserCreate, db: Session = Depends(database.get_db)):
