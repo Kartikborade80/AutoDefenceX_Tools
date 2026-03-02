@@ -185,13 +185,7 @@ const EndpointDetail = () => {
                             <p>{endpoint.trust_score > 80 ? 'Optimal protection level achieved.' : 'Vulnerabilities detected. Action required.'}</p>
                         </div>
                     </div>
-                    <div className="quick-actions">
-                        <h4>Containment Protocols</h4>
-                        <div className="action-btns">
-                            <button className="cyber-button danger mini">ISOLATE ENDPOINT</button>
-                            <button className="cyber-button warning mini">RESTRICT ACCESS</button>
-                        </div>
-                    </div>
+
                 </section>
 
                 {/* Live Alerts */}

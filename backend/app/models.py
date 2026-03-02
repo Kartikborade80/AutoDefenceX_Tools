@@ -393,3 +393,17 @@ class Message(Base):
     department = relationship("Department")
     organization = relationship("Organization")
 
+class NetworkTopologyMap(Base):
+    __tablename__ = "network_topologies"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False)
+    name = Column(String, default="Default Topology")
+    topology_data = Column(Text)  # JSON blob: {devices: [...], connections: [...]}
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    organization = relationship("Organization")
+    creator = relationship("User", foreign_keys=[created_by])
+

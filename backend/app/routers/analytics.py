@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any
 from .. import auth, models, database, crud, websockets
-from .endpoints import isolate_endpoint_logic, kill_process_logic # Import logic from endpoints
+from .endpoints import kill_process_logic # Import logic from endpoints
 from datetime import datetime
 import random
 import asyncio
@@ -186,17 +186,7 @@ async def run_autonomous_playbooks(db: Session = Depends(database.get_db), curre
     for ep in endpoints:
         sys_info = ep.system_info
         
-        # Rule 1: High Risk Critical Isolation
-        if ep.risk_level == 'critical' and ep.status == 'online':
-            # Auto-Isolate
-            result = await isolate_endpoint_logic(ep.id, db, current_user, "Autonomous Playbook: Critical Risk Isolation")
-            actions_taken.append({
-                "endpoint": ep.hostname,
-                "rule": "Critical Risk Auto-Isolation",
-                "action": "Isolated",
-                "status": "Success" if result else "Failed"
-            })
-            
+
         # Rule 2: Malicious Process Termination
         if sys_info and sys_info.running_processes:
             malicious_patterns = ["miner.exe", "ransom.exe", "backdoor.exe", "mimikatz"]

@@ -1,9 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import axios from '../api';
 import { FileText, Download, Users, Bug, Shield, CheckCircle, Activity, Filter, FileDown } from 'lucide-react';
-import jsPDF from 'jspdf';
+import * as jspdf from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import * as XLSX from 'xlsx';
+
+// Re-map jsPDF and autoTable for different bundle environments
+const getJsPDF = () => {
+    if (typeof jspdf === 'function') return jspdf;
+    if (jspdf && typeof jspdf.jsPDF === 'function') return jspdf.jsPDF;
+    if (jspdf && typeof jspdf.default === 'function') return jspdf.default;
+    return null;
+};
+
+const getAutoTable = (doc) => {
+    if (typeof autoTable === 'function') return autoTable;
+    if (doc && typeof doc.autoTable === 'function') return doc.autoTable.bind(doc);
+    return null;
+};
 import './Dashboard.css';
 
 const Reports = () => {
@@ -14,6 +27,7 @@ const Reports = () => {
     const [selectedUserId, setSelectedUserId] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
+    const [generatedAt, setGeneratedAt] = useState(null);
 
     useEffect(() => {
         // Fetch users list for employee report
@@ -65,9 +79,7 @@ const Reports = () => {
                 case 'security':
                     endpoint = '/reports/security';
                     break;
-                case 'compliance':
-                    endpoint = '/reports/compliance';
-                    break;
+
                 case 'system-health':
                     endpoint = '/reports/system-health';
                     break;
@@ -83,6 +95,7 @@ const Reports = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setReportData(res.data);
+            setGeneratedAt(new Date().toLocaleString());
         } catch (err) {
             console.error('Failed to fetch report', err);
             setReportData(null);
@@ -92,89 +105,151 @@ const Reports = () => {
     };
 
     const exportToPDF = () => {
-        if (!reportData) return;
+        try {
+            const DocConstructor = getJsPDF();
+            if (!DocConstructor) {
+                throw new Error("jsPDF library not found");
+            }
 
-        const doc = new jsPDF();
-        const pageWidth = doc.internal.pageSize.width;
+            const doc = new DocConstructor();
+            const at = getAutoTable(doc);
 
-        // Title
-        doc.setFontSize(18);
-        doc.setTextColor(0, 123, 255);
-        doc.text(`${reportType.toUpperCase()} REPORT`, pageWidth / 2, 20, { align: 'center' });
-
-        // Metadata
-        doc.setFontSize(10);
-        doc.setTextColor(100);
-        doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 30);
-
-        let yPos = 40;
-
-        // Add report data based on type
-        if (reportType === 'all-employees' && reportData.employees) {
-            autoTable(doc, {
-                startY: yPos,
-                head: [['ID', 'Username', 'Full Name', 'Role', 'Risk', 'Status']],
-                body: reportData.employees.map(e => [e.id, e.username, e.full_name, e.role, e.risk_score, e.is_active ? 'Active' : 'Inactive']),
-                theme: 'grid',
-                headStyles: { fillColor: [0, 123, 255] }
+            console.log('PDF Export Diagnostics:', {
+                reportType,
+                reportDataPresent: !!reportData,
+                hasAutoTable: !!at,
+                jsPDF_Type: typeof DocConstructor
             });
-        }
-        else if (reportType === 'bugs' && reportData.recent_tickets) {
-            autoTable(doc, {
-                startY: yPos,
-                head: [['ID', 'Category', 'Status', 'Description', 'Created']],
-                body: reportData.recent_tickets.map(t => [t.id, t.category, t.status, t.description, new Date(t.created_at).toLocaleDateString()]),
-                theme: 'grid',
-                headStyles: { fillColor: [220, 53, 69] }
-            });
-        }
-        else if (reportData) {
-            // Generic dump for other types
-            doc.setFontSize(12);
-            doc.text("Report Summary", 14, yPos);
-            yPos += 10;
-            const summaryData = Object.entries(reportData.summary || {}).map(([k, v]) => [`${k}`, `${v}`]);
-            if (summaryData.length > 0) {
-                autoTable(doc, {
+
+            if (!reportData) {
+                console.warn('No report data available for export');
+                return;
+            }
+
+            const pageWidth = doc.internal.pageSize.width;
+            const pageHeight = doc.internal.pageSize.height;
+
+            // Enhanced Header Background
+            doc.setFillColor(15, 23, 42); // --bg-dark
+            doc.rect(0, 0, pageWidth, 45, 'F');
+
+            // Branding / Logo Placeholder Simulation
+            doc.setTextColor(59, 130, 246); // --accent-primary
+            doc.setFontSize(24);
+            doc.setFont('helvetica', 'bold');
+            doc.text("AutoDefenceX", 14, 20);
+
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text("CYBER DEFENCE & SYSTEM POLICY SUITE", 14, 28);
+
+            // Title
+            const title = `${reportType.replace('-', ' ').toUpperCase()} REPORT`;
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text(title, pageWidth - 14, 25, { align: 'right' });
+
+            // Metadata
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(148, 163, 184); // --text-secondary
+            doc.text(`Generated on: ${new Date().toLocaleString()}`, pageWidth - 14, 32, { align: 'right' });
+            doc.text(`Organization: Admin Suite Internal`, pageWidth - 14, 37, { align: 'right' });
+
+            let yPos = 60;
+
+            // Add report data based on type with custom table styling
+            if (reportType === 'all-employees' && reportData.employees && at) {
+                at(doc, {
                     startY: yPos,
-                    head: [['Metric', 'Value']],
-                    body: summaryData,
-                    theme: 'grid'
+                    head: [['ID', 'Username', 'Full Name', 'Role', 'Risk', 'Status']],
+                    body: reportData.employees.map(e => [e.id, e.username, e.full_name || 'N/A', e.role, e.risk_score?.toFixed(1) || '0.0', e.is_active ? 'Active' : 'Inactive']),
+                    theme: 'striped',
+                    headStyles: {
+                        fillColor: [37, 99, 235], // #2563eb
+                        textColor: [255, 255, 255],
+                        fontSize: 10,
+                        fontStyle: 'bold'
+                    },
+                    alternateRowStyles: { fillColor: [241, 245, 249] },
+                    styles: { fontSize: 9, cellPadding: 4 }
                 });
             }
-        }
+            else if (reportType === 'bugs' && reportData.recent_tickets && at) {
+                at(doc, {
+                    startY: yPos,
+                    head: [['ID', 'Category', 'Status', 'Description', 'Created']],
+                    body: reportData.recent_tickets.map(t => [t.id, t.category, t.status, t.description, new Date(t.created_at).toLocaleDateString()]),
+                    theme: 'striped',
+                    headStyles: {
+                        fillColor: [239, 68, 68], // --danger
+                        textColor: [255, 255, 255],
+                        fontSize: 10,
+                        fontStyle: 'bold'
+                    },
+                    alternateRowStyles: { fillColor: [254, 242, 242] },
+                    styles: { fontSize: 9, cellPadding: 4 }
+                });
+            }
+            else if (reportData && at) {
+                // Summary Dashboard layout in PDF
+                doc.setFontSize(12);
+                doc.setTextColor(15, 23, 42);
+                doc.setFont('helvetica', 'bold');
+                doc.text("Report Summary Metrics", 14, yPos);
+                yPos += 8;
 
-        doc.save(`${reportType}-report-${new Date().toISOString().split('T')[0]}.pdf`);
+                const summaryData = Object.entries(reportData.summary || {}).map(([k, v]) => [
+                    k.replace(/_/g, ' ').toUpperCase(),
+                    typeof v === 'number' ? v.toFixed(1) : String(v)
+                ]);
+
+                if (summaryData.length > 0) {
+                    at(doc, {
+                        startY: yPos,
+                        head: [['Metric Definition', 'Operational Value']],
+                        body: summaryData,
+                        theme: 'grid',
+                        headStyles: { fillColor: [71, 85, 105], textColor: [255, 255, 255] },
+                        styles: { fontSize: 9 }
+                    });
+                }
+            }
+
+            // Footer
+            const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 20 : yPos + 20;
+            doc.setFontSize(8);
+            doc.setTextColor(148, 163, 184);
+            doc.text("Confidential Information - AutoDefenceX Security Reports", 14, pageHeight - 10);
+            doc.text(`Page 1`, pageWidth - 20, pageHeight - 10);
+
+            console.log('Attempting to save PDF...');
+            const filename = `AutoDefenceX-${reportType || 'report'}-${new Date().toISOString().split('T')[0]}.pdf`;
+
+            // Use Blob-based download with explicit MIME type for correct filename
+            const pdfArrayBuffer = doc.output('arraybuffer');
+            const pdfBlob = new Blob([pdfArrayBuffer], { type: 'application/pdf' });
+            const blobUrl = URL.createObjectURL(pdfBlob);
+            const downloadLink = document.createElement('a');
+            downloadLink.href = blobUrl;
+            downloadLink.setAttribute('download', filename);
+            downloadLink.style.display = 'none';
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+
+            // Cleanup after a short delay
+            setTimeout(() => {
+                document.body.removeChild(downloadLink);
+                URL.revokeObjectURL(blobUrl);
+            }, 150);
+            console.log('PDF Export complete.');
+        } catch (error) {
+            console.error('CRITICAL: PDF Export failed', error);
+            alert('Failed to generate PDF. Check console for details.');
+        }
     };
 
-    const exportToExcel = () => {
-        if (!reportData) return;
-
-        let worksheetData = [];
-
-        // Format data based on report type
-        if (reportType === 'all-employees' && reportData.employees) {
-            worksheetData = reportData.employees.map(emp => ({
-                'ID': emp.id,
-                'Username': emp.username,
-                'Full Name': emp.full_name || 'N/A',
-                'Job Title': emp.job_title || 'N/A',
-                'Role': emp.role,
-                'Risk Score': emp.risk_score.toFixed(1),
-                'Tickets': emp.ticket_count,
-                'Status': emp.is_active ? 'Active' : 'Inactive'
-            }));
-        } else {
-            // Fallback for other report types
-            worksheetData = [reportData];
-        }
-
-        const worksheet = XLSX.utils.json_to_sheet(worksheetData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Report");
-
-        XLSX.writeFile(workbook, `${reportType}-report-${new Date().toISOString().split('T')[0]}.xlsx`);
-    };
 
     // --- PERSONAL (USER) VIEW ---
     const role = JSON.parse(localStorage.getItem('user_info') || '{}').role;
@@ -525,81 +600,7 @@ const Reports = () => {
         </div>
     );
 
-    const renderComplianceReport = () => (
-        <div className="report-content">
-            <div className="report-section">
-                <h3>Compliance Summary</h3>
-                <div className="stats-grid">
-                    <div className="metric-box blue-border">
-                        <h4>Total Users</h4>
-                        <p>{reportData?.summary?.total_users || 0}</p>
-                    </div>
-                    <div className="metric-box green-border">
-                        <h4>Active Users</h4>
-                        <p>{reportData?.summary?.active_users || 0}</p>
-                    </div>
-                    <div className="metric-box blue-border">
-                        <h4>Total Endpoints</h4>
-                        <p>{reportData?.summary?.total_endpoints || 0}</p>
-                    </div>
-                    <div className="metric-box green-border">
-                        <h4>Online Endpoints</h4>
-                        <p>{reportData?.summary?.online_endpoints || 0}</p>
-                    </div>
-                    <div className="metric-box green-border">
-                        <h4>Overall Compliance</h4>
-                        <p>{reportData?.summary?.overall_compliance_rate || 0}%</p>
-                    </div>
-                </div>
-            </div>
 
-            <div className="report-section">
-                <h3>Policy Compliance</h3>
-                <div className="table-container">
-                    <table className="data-table">
-                        <thead>
-                            <tr>
-                                <th>Policy</th>
-                                <th>Compliant</th>
-                                <th>Non-Compliant</th>
-                                <th>Compliance Rate</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {reportData?.policy_compliance && Object.entries(reportData.policy_compliance).map(([policy, data]) => {
-                                const total = (data?.compliant || 0) + (data?.non_compliant || 0);
-                                const rate = total > 0 ? ((data.compliant / total) * 100).toFixed(1) : "0.0";
-                                return (
-                                    <tr key={policy}>
-                                        <td>{policy.replace('_', ' ').toUpperCase()}</td>
-                                        <td className="text-green">{data?.compliant || 0}</td>
-                                        <td className="text-red">{data?.non_compliant || 0}</td>
-                                        <td className={rate >= 90 ? 'text-green' : rate >= 70 ? 'text-yellow' : 'text-red'}>
-                                            {rate}%
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            {reportData?.recommendations?.length > 0 && (
-                <div className="report-section">
-                    <h3>Security Recommendations</h3>
-                    <div className="recommendations-list">
-                        {reportData.recommendations.map((rec, index) => (
-                            <div key={index} className="recommendation-item">
-                                <span className={`priority-badge ${rec.priority}`}>{rec.priority.toUpperCase()}</span>
-                                <p>{rec.message}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
 
     const renderSystemHealthReport = () => (
         <div className="report-content">
@@ -694,8 +695,7 @@ const Reports = () => {
                 return renderBugsReport();
             case 'security':
                 return renderSecurityReport();
-            case 'compliance':
-                return renderComplianceReport();
+
             case 'system-health':
                 return renderSystemHealthReport();
             default:
@@ -707,12 +707,15 @@ const Reports = () => {
         <div className="dashboard-container fade-in">
             <header className="dashboard-header">
                 <h2><FileText className="icon-lg" /> Reports & Analytics</h2>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                    <button className="action-btn" onClick={exportToPDF} disabled={!reportData}>
-                        <FileDown size={16} /> Export PDF
-                    </button>
-                    <button className="action-btn" onClick={exportToExcel} disabled={!reportData}>
-                        <Download size={16} /> Export Excel
+                <div className="export-controls-header">
+                    <button
+                        className="export-pdf-btn-glass"
+                        onClick={exportToPDF}
+                        disabled={!reportData}
+                        title="Download Premium PDF Report"
+                    >
+                        <FileDown size={18} />
+                        <span>Export Report</span>
                     </button>
                 </div>
             </header>
@@ -731,7 +734,7 @@ const Reports = () => {
                                 <option value="employee">Per-Employee Report</option>
                                 <option value="bugs">Bug/Ticket Report</option>
                                 <option value="security">Security Report</option>
-                                <option value="compliance">Compliance Report</option>
+
                                 <option value="system-health">System Health Report</option>
                             </select>
                         </div>
@@ -793,10 +796,10 @@ const Reports = () => {
                     </div>
                 </div>
 
-                {reportData && (
+                {generatedAt && (
                     <div className="report-header">
                         <p className="report-meta">
-                            Generated: {reportData.generated_at ? new Date(reportData.generated_at).toLocaleString() : 'N/A'}
+                            Generated: {generatedAt}
                         </p>
                     </div>
                 )}

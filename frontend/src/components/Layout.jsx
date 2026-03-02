@@ -222,19 +222,12 @@ const Layout = ({ onLogout }) => {
                                 <span className="text-red-200">Security Intel</span>
                             </NavLink>
 
-                            <div className="tab-group-title">Advanced</div>
-                            <NavLink to="/healing" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                                <div className="sidebar-icon icon-healing"><Activity size={22} /></div>
-                                <span>Network Healing</span>
-                            </NavLink>
+
                             <NavLink to="/predictive" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                                 <div className="sidebar-icon icon-predictive"><TrendingUp size={22} /></div>
                                 <span>Predictive Threat</span>
                             </NavLink>
-                            <NavLink to="/compliance" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                                <div className="sidebar-icon icon-compliance"><ClipboardCheck size={22} /></div>
-                                <span>Compliance</span>
-                            </NavLink>
+
                             <NavLink to="/network-scanning" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                                 <div className="sidebar-icon icon-endpoints"><Search size={22} /></div>
                                 <span>Network Discovery</span>

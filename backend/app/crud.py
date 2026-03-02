@@ -173,6 +173,7 @@ def create_admin_user(db: Session, admin: schemas.AdminRegisterCreate):
             full_name=admin.full_name,
             email=admin.email,
             phone=admin.phone,
+            mobile_number=admin.phone,
             is_normal_user=True,
             is_head_admin=True,  # First admin of organization is head admin
             risk_score=0.0

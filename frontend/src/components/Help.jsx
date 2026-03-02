@@ -227,18 +227,6 @@ const Help = () => {
                             Predictive threat analysis using machine learning to identify and prevent security incidents before they occur.
                         </p>
                     </div>
-                    <div style={{ padding: '1rem', background: 'var(--bg-acrylic)', borderRadius: '8px' }}>
-                        <h4 style={{ color: 'var(--primary)', marginBottom: '0.5rem' }}>🔧 Network Healing</h4>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>
-                            Automated remediation of network issues, quarantine management, and system rollback capabilities.
-                        </p>
-                    </div>
-                    <div style={{ padding: '1rem', background: 'var(--bg-acrylic)', borderRadius: '8px' }}>
-                        <h4 style={{ color: 'var(--primary)', marginBottom: '0.5rem' }}>✅ Compliance Monitoring</h4>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>
-                            Track compliance with industry standards, generate audit reports, and maintain security certifications.
-                        </p>
-                    </div>
                 </div>
             </div>
 

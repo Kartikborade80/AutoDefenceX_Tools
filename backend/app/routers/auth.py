@@ -19,6 +19,7 @@ async def login_for_access_token(
 ):
     from .otp import send_2factor_otp_request, verify_2factor_otp_request, verification_sessions, format_phone
     from datetime import datetime, timedelta
+    import requests
 
     # Capture IP and User-Agent
     client_ip = request.client.host if request.client else "unknown"
@@ -139,55 +140,75 @@ async def login_for_access_token(
     user.account_locked_until = None
     db.commit()
 
-    
-    # Check if user is Admin and needs OTP
-    if user.role == "admin":
-        if not otp:
-            phone = format_phone(user.mobile_number) if user.mobile_number else "N/A"
+    # ===== OTP MFA FOR ALL USERS =====
+    if not otp:
+        # Determine available OTP methods based on user's contact info
+        phone = format_phone(user.mobile_number) if user.mobile_number else ""
+        email = user.email or ""
+        
+        otp_methods = []
+        if email:
+            otp_methods.append("email")
+        if phone and len(phone) == 10:
+            otp_methods.append("sms")
+            otp_methods.append("call")
+        
+        # If no methods available, still allow email as fallback
+        if not otp_methods:
+            otp_methods = ["email"]
+        
+        # Mask contact info for display
+        phone_masked = f"{phone[:3]}****{phone[-3:]}" if phone and len(phone) >= 6 else None
+        email_masked = None
+        if email:
+            parts = email.split("@")
+            if len(parts) == 2:
+                name_part = parts[0]
+                masked_name = name_part[0] + "***" + (name_part[-1] if len(name_part) > 1 else "")
+                email_masked = f"{masked_name}@{parts[1]}"
+        
+        return {
+            "access_token": "",
+            "token_type": "bearer",
+            "otp_required": True,
+            "phone_masked": phone_masked,
+            "email_masked": email_masked,
+            "otp_methods": otp_methods,
+            "user_info": None,
+            "note": "Please select your preferred OTP delivery method."
+        }
+    else:
+        # Verify OTP code
+        phone = format_phone(user.mobile_number) if user.mobile_number else "0000000000"
+        
+        if phone in verification_sessions:
+            session_data = verification_sessions[phone]
             
-            # TRIGGER REAL OTP DISPATCH
-            # If user has no phone, we can't send SMS, but we can try Email
-            otp_res = send_2factor_otp_request(
-                phone=user.mobile_number if user.mobile_number else "0000000000",
-                email=user.email
-            )
-            
-            if otp_res.get("success"):
-                # Store the session for the verification step
-                # We use phone as the key in verification_sessions
-                sess_phone = format_phone(user.mobile_number) if user.mobile_number else "0000000000"
-                verification_sessions[sess_phone] = {
-                    "session_id": otp_res.get("session_id"),
-                    "otp_code": otp_res.get("otp_code"),
-                    "created_at": datetime.utcnow()
-                }
-            
-            return {
-                "access_token": "",
-                "token_type": "bearer",
-                "otp_required": True,
-                "phone_masked": f"{phone[:3]}****{phone[-3:]}" if phone != "N/A" else "Admin MFA",
-                "user_info": None,
-                "note": "A 6-digit verification code has been sent to your registered email/phone."
-            }
-        else:
-            # Verify REAL OTP
-            phone = format_phone(user.mobile_number) if user.mobile_number else "0000000000"
-            
-            # DEMO BYPASS: Allow 000000 if email password is not set or for test user kartik.borade
-            is_demo_mode = not os.environ.get("EMAIL_PASSWORD")
-            if (is_demo_mode or user.username == "kartik.borade") and otp == "000000":
-                print(f"⚠️ Security: Admin {user.username} used OTP bypass (000000)")
-            elif phone in verification_sessions:
-                session_data = verification_sessions[phone]
+            # Check if this was an AUTOGEN SMS session — use 2Factor VERIFY API
+            if session_data.get("use_2factor_verify") and session_data.get("autogen_session"):
+                autogen_session = session_data["autogen_session"]
+                try:
+                    verify_url = f"https://2factor.in/API/V1/{os.environ.get('TFACTOR_API_KEY')}/SMS/VERIFY3/{phone}/{autogen_session}/{otp}"
+                    response = requests.get(verify_url, timeout=10)
+                    res_data = response.json()
+                    print(f"📱 SMS VERIFY RESPONSE: {res_data}")
+                    if res_data.get("Status") != "Success":
+                        raise HTTPException(status_code=401, detail="Invalid Security OTP")
+                except HTTPException:
+                    raise
+                except Exception as e:
+                    print(f"❌ SMS Verify Exception: {e}")
+                    raise HTTPException(status_code=401, detail="OTP verification failed")
+            else:
+                # Standard verification (Email / Voice Call / fallback SMS)
                 if not verify_2factor_otp_request(session_data["otp_code"], otp):
                     raise HTTPException(status_code=401, detail="Invalid Security OTP")
-                
-                # Success! Cleanup session
-                del verification_sessions[phone]
-                print(f"✅ Security: Admin {user.username} verified using Real OTP")
-            else:
-                raise HTTPException(status_code=401, detail="OTP session expired or not found. Please login again.")
+            
+            # Success! Cleanup session
+            del verification_sessions[phone]
+            print(f"✅ Security: {user.username} verified using Real OTP")
+        else:
+            raise HTTPException(status_code=401, detail="OTP session expired or not found. Please login again.")
     
     # Update last login time
     crud.update_last_login(db, user.id)

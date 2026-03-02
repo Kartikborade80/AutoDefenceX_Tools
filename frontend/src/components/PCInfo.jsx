@@ -52,7 +52,7 @@ const PCInfo = () => {
                         <span className="metric-label">Security Score</span>
                     </div>
                     <div className="metric-value">{10 - info.riskScore}/10</div>
-                    <div className="metric-subtitle">High Compliance</div>
+                    <div className="metric-subtitle">High Security</div>
                 </div>
             </div>
 

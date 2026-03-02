@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Literal
 from datetime import datetime
 
 # --- System Info ---
@@ -249,6 +249,8 @@ class Token(BaseModel):
 class TokenResponse(Token):
     otp_required: bool = False
     phone_masked: Optional[str] = None
+    email_masked: Optional[str] = None
+    otp_methods: Optional[List[str]] = None
 
 class TokenData(BaseModel):
     username: Optional[str] = None

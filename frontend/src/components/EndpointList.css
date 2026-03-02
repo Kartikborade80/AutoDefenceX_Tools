@@ -31,8 +31,3 @@
 .status-indicator.offline {
     background: var(--text-secondary);
 }
-
-.status-indicator.isolated {
-    background: var(--danger);
-    box-shadow: 0 0 10px var(--danger);
-}

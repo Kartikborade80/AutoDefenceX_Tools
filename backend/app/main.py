@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import os
 from dotenv import load_dotenv
-from .routers import users, endpoints, scans, auth, threat_intel, reports, departments, policies, forensics, sessions, chatbot, otp, organizations, attendance, messages, defender, system, search, analytics, agent, password
+from .routers import users, endpoints, scans, auth, threat_intel, reports, departments, policies, forensics, sessions, chatbot, otp, organizations, attendance, messages, defender, system, search, analytics, agent, password, topology
 from .websockets import manager
 from .auth import get_current_user_from_token
 from fastapi import WebSocket, WebSocketDisconnect, Query
@@ -136,6 +136,7 @@ app.include_router(sessions.router)
 app.include_router(otp.router)
 app.include_router(organizations.router)
 app.include_router(agent.router)
+app.include_router(topology.router)
 
 def seed_database():
     from .database import SessionLocal

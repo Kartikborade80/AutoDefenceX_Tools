@@ -11,9 +11,8 @@ import Reports from './components/Reports';
 import Forensics from './components/Forensics';
 import AdminRegister from './components/AdminRegister';
 import Departments from './components/Departments';
-import NetworkHealing from './components/NetworkHealing';
-import PredictiveThreats from './components/PredictiveThreats';
-import Compliance from './components/Compliance';
+
+
 import About from './components/About';
 import TicketSystem from './components/TicketSystem';
 import Monitoring from './components/Monitoring'; // Added Monitoring import
@@ -31,6 +30,7 @@ import SecurityDashboard from './components/SecurityDashboard';
 import NetworkScanner from './components/NetworkScanner';
 import EndpointDetail from './components/EndpointDetail';
 import NetworkTopology from './components/NetworkTopology';
+import PredictiveThreats from './components/PredictiveThreats';
 import UserActivityHandler from './components/UserActivityHandler';
 import { ThemeProvider } from './context/ThemeContext';
 import './GlobalStyles.css';
@@ -89,9 +89,8 @@ function App() {
             <Route path="policies" element={<Policies />} />
             <Route path="reports" element={<Reports />} />
             <Route path="forensics" element={<Forensics />} />
-            <Route path="healing" element={<NetworkHealing />} />
-            <Route path="predictive" element={<PredictiveThreats />} />
-            <Route path="compliance" element={<Compliance />} />
+
+
             <Route path="about" element={<About />} />
             <Route path="tickets" element={<TicketSystem />} />
             <Route path="pc-info" element={<PCInfo />} />
@@ -107,6 +106,7 @@ function App() {
             <Route path="security" element={<SecurityDashboard />} />
             <Route path="network-scanning" element={<NetworkScanner />} />
             <Route path="topology" element={<NetworkTopology />} />
+            <Route path="predictive" element={<PredictiveThreats />} />
           </Route>
         </Routes>
 

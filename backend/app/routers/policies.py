@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
 from .. import crud, models, schemas, database, auth
+from ..utils import enforcer
 
 router = APIRouter(
     prefix="/policies",
@@ -28,6 +29,11 @@ def create_policy(
     db.add(db_policy)
     db.commit()
     db.refresh(db_policy)
+
+    # System Enforcement
+    if db_policy.enabled:
+        enforcer.enforce_policy(db_policy.policy_type, True)
+
     return db_policy
 
 @router.get("/", response_model=List[schemas.Policy])
@@ -100,6 +106,11 @@ def update_policy(
     
     db.commit()
     db.refresh(policy)
+
+    # System Enforcement
+    if "enabled" in policy_update.dict(exclude_unset=True):
+        enforcer.enforce_policy(policy.policy_type, policy.enabled)
+
     return policy
 
 @router.delete("/{policy_id}")
@@ -176,4 +187,10 @@ def propagate_policies(
     except Exception as e:
         print(f"Broadcast error: {e}")
         
-    return {"message": "Policy propagation signal sent to all agents"}
+    # Bulk System Enforcement
+    org_policies = db.query(models.Policy).filter(
+        models.Policy.organization_id == current_user.organization_id
+    ).all()
+    enforcer.sync_policies(org_policies)
+
+    return {"message": "Policy propagation signal sent to all agents and enforced locally"}

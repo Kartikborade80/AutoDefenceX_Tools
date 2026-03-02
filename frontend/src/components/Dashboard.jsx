@@ -162,8 +162,10 @@ const Dashboard = () => {
                     </div>
 
                     {/* 2. Compliance & Health */}
-                    <div className="card stat-card-wide">
-                        <h3><Shield size={22} /> Endpoint Compliance</h3>
+                    <div className="metric-card">
+                        <div className="metric-header">
+                            <h3><Shield size={22} /> Endpoint Health</h3>
+                        </div>
                         <div className="health-metrics">
                             <div className="health-bar-container">
                                 <span>Policy Adherence</span>

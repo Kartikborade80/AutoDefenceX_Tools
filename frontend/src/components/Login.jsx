@@ -4,6 +4,7 @@ import axios from '../api';
 import { Eye, EyeOff, LogIn, Lock, XCircle, User, Shield } from 'lucide-react';
 import './Login.css';
 import PasswordChangeModal from './PasswordChangeModal';
+import OTPMethodSelector from './OTPMethodSelector';
 
 const Login = ({ onLogin }) => {
     const navigate = useNavigate();
@@ -17,6 +18,13 @@ const Login = ({ onLogin }) => {
     const [otpRequired, setOtpRequired] = useState(false);
     const [loginOTP, setLoginOTP] = useState('');
     const [maskedPhone, setMaskedPhone] = useState('');
+
+    // OTP Method Selection State
+    const [showMethodSelector, setShowMethodSelector] = useState(false);
+    const [otpMethods, setOtpMethods] = useState([]);
+    const [maskedEmail, setMaskedEmail] = useState('');
+    const [selectedMethod, setSelectedMethod] = useState('');
+    const [otpSentMessage, setOtpSentMessage] = useState('');
 
     // Live company name display
     const [companyName, setCompanyName] = useState('');
@@ -165,8 +173,11 @@ const Login = ({ onLogin }) => {
             });
 
             if (response.data.otp_required) {
-                setOtpRequired(true);
-                setMaskedPhone(response.data.phone_masked);
+                // Show method selector popup instead of OTP input directly
+                setOtpMethods(response.data.otp_methods || ['email']);
+                setMaskedPhone(response.data.phone_masked || '');
+                setMaskedEmail(response.data.email_masked || '');
+                setShowMethodSelector(true);
                 setIsLoading(false);
                 return;
             }
@@ -577,16 +588,19 @@ const Login = ({ onLogin }) => {
                             <div className="otp-step slide-up" style={{ marginTop: '15px', padding: '15px', border: '1px solid #3b82f6', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.05)' }}>
                                 <p style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '10px' }}>
                                     <i className="fas fa-shield-alt" style={{ marginRight: '8px' }}></i>
-                                    Security OTP sent to <strong>{maskedPhone}</strong>
+                                    {otpSentMessage || `Security OTP sent via ${selectedMethod === 'call' ? 'Voice Call' : selectedMethod === 'sms' ? 'SMS' : 'Email'}`}
+                                    {maskedPhone && selectedMethod !== 'email' && <> to <strong>{maskedPhone}</strong></>}
+                                    {maskedEmail && selectedMethod === 'email' && <> to <strong>{maskedEmail}</strong></>}
                                 </p>
                                 <input
                                     type="text"
-                                    placeholder="Enter Login OTP"
+                                    placeholder="Enter 6-digit OTP"
                                     value={loginOTP}
                                     onChange={(e) => setLoginOTP(e.target.value)}
                                     required
                                     className="cyber-input"
                                     autoFocus
+                                    maxLength={6}
                                 />
                             </div>
                         )}
@@ -621,11 +635,30 @@ const Login = ({ onLogin }) => {
                         setRole(null);
                         setOtpRequired(false);
                         setLoginOTP('');
+                        setShowMethodSelector(false);
+                        setSelectedMethod('');
+                        setOtpSentMessage('');
                     }}>
                         &larr; Back to Role Selection
                     </button>
                 </div>
             </div>
+
+            {/* OTP Method Selector Modal */}
+            <OTPMethodSelector
+                isOpen={showMethodSelector}
+                onClose={() => setShowMethodSelector(false)}
+                username={username}
+                availableMethods={otpMethods}
+                maskedPhone={maskedPhone}
+                maskedEmail={maskedEmail}
+                onMethodSelected={(method, message) => {
+                    setSelectedMethod(method);
+                    setOtpSentMessage(message);
+                    setShowMethodSelector(false);
+                    setOtpRequired(true);
+                }}
+            />
 
             {/* Password Change Modal */}
             <PasswordChangeModal
